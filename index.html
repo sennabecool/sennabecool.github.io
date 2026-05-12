@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f0f0f0" />
+  <title>Leo Cabannes — Human-centered designer crafting with, for, and within AI</title>
+  <meta name="description" content="Portfolio of Leo Cabannes, Lead Designer (UX/UI) at Artefact in Paris, designing GenAI use cases for Business Intelligence." />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-screen="home" data-menu="closed">
+
+  <!-- SVG icon defs reused across the site -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-corner-down-right" viewBox="0 0 24 24">
+        <path d="M6 7v4a3 3 0 0 0 3 3h9m0 0-4-4m4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24">
+        <path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24">
+        <path d="M12 6v12M6 12h12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <main class="app">
+
+    <!-- =================== HOME =================== -->
+    <section class="screen screen-home" data-screen-name="home" aria-label="Home">
+      <header class="top-bar">
+        <a class="logo logo-lg" href="#home" aria-label="Leo Cabannes home">
+          <img src="assets/logo.svg" alt="" />
+        </a>
+      </header>
+
+      <div class="hero">
+        <h1 class="h1">Human-centered designer crafting with, for, and within AI_</h1>
+        <p class="lede">Welcome to my portfolio, a concept celebrating my 4 years of work focused on Generative AI use cases. Where do you want to start ?</p>
+      </div>
+
+      <button type="button" class="suggestion" data-target="about">
+        <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
+        <span>Tell me more about yourself</span>
+      </button>
+    </section>
+
+    <!-- =================== ABOUT =================== -->
+    <section class="screen screen-about" data-screen-name="about" aria-label="About" hidden>
+      <header class="top-bar top-bar--conversation">
+        <button type="button" class="back-btn" data-action="back" aria-label="Go back">
+          <svg aria-hidden="true"><use href="#i-chevron-left"/></svg>
+        </button>
+        <span class="question-chip">
+          Tell me more <strong>about</strong> yourself
+        </span>
+      </header>
+
+      <a class="logo logo-sm" href="#home" aria-label="Leo Cabannes home">
+        <img src="assets/logo.svg" alt="" />
+      </a>
+
+      <article class="answer">
+        <p>Bonjour !</p>
+        <p>I&rsquo;m Leo, a <strong>Lead Designer (UX/UI)</strong> based in Paris managing a small team of researchers and product designers at Artefact.</p>
+        <p>Lately my focus has been on designing <strong>GenAI use cases</strong> for Business Intelligence. This pushed me to dig further into data analysis and data engineering, curious to discover how better data foundations can inspire innovative problem-solving products and/or features.</p>
+        <p>When I&rsquo;m not working, you might come across me and my bike in the train, heading out for a <strong>day-long gravel ride</strong> somewhere in France.</p>
+
+        <div class="suggestions">
+          <button type="button" class="suggestion" data-target="work">
+            <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
+            <span>Where have you worked?</span>
+          </button>
+          <button type="button" class="suggestion" data-target="about">
+            <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
+            <span>What schools did you go to?</span>
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <!-- =================== WORK =================== -->
+    <section class="screen screen-work" data-screen-name="work" aria-label="Work" hidden>
+      <header class="top-bar top-bar--conversation">
+        <button type="button" class="back-btn" data-action="back" aria-label="Go back">
+          <svg aria-hidden="true"><use href="#i-chevron-left"/></svg>
+        </button>
+        <span class="question-chip">
+          What are your lastest <strong>work</strong> projects?
+        </span>
+      </header>
+
+      <a class="logo logo-sm" href="#home" aria-label="Leo Cabannes home">
+        <img src="assets/logo.svg" alt="" />
+      </a>
+
+      <p class="lede">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+
+      <div class="project-grid">
+        <a class="project-card project-card--sm" href="#" aria-label="Carrefour Links project">
+          <img src="assets/carrefour.png" alt="" />
+          <span class="project-card__tag">20 %</span>
+          <span class="project-card__title">Carrefour Links</span>
+        </a>
+
+        <a class="project-card project-card--sm" href="#" aria-label="Amundi project">
+          <img src="assets/amundi.png" alt="" />
+          <span class="project-card__title">Amundi</span>
+        </a>
+
+        <a class="project-card project-card--md project-card--split" href="#" aria-label="Augmenting perfumers' inspiration with an AI model">
+          <span class="project-card__title project-card__title--dark">Augmenting perfumers&rsquo; inspiration with an AI model</span>
+          <span class="project-card__image">
+            <img src="assets/perfumers.png" alt="" />
+          </span>
+        </a>
+
+        <a class="project-card project-card--lg" href="#" aria-label="Project four">
+          <img src="assets/project4.png" alt="" />
+          <span class="project-card__title">Lorem ipsum dolor sit amet consectetur adipiscing elit.</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =================== CHAT INPUT (global, fixed) =================== -->
+  <!-- Overlay sits OUTSIDE .chatbox-wrap on purpose: the wrap has a transform
+       which would otherwise turn it into a containing block, breaking the
+       overlay's fixed positioning and putting it above the chatbox in the
+       stacking order. -->
+  <div class="chatbox-overlay" data-action="close-menu" aria-hidden="true"></div>
+
+  <div class="chatbox-wrap">
+    <div class="chatbox" role="region" aria-label="Ask Leo Cabannes">
+     <div class="chatbox__inner">
+      <div class="chatbox__prompt">Ask Leo Cabannes...</div>
+
+      <div class="chatbox__menu">
+        <div class="chatbox__options" data-state="collapsed">
+          <!-- Collapsed: small chips, single keyword -->
+          <button type="button" class="chip chip--sm" data-target="about">about</button>
+          <button type="button" class="chip chip--sm" data-target="work">work</button>
+          <button type="button" class="chip chip--sm" data-target="awards">awards</button>
+          <button type="button" class="chip chip--sm" data-target="contact">contact</button>
+          <button type="button" class="chip chip--sm" data-target="places">places</button>
+          <button type="button" class="chip chip--sm" data-target="songs">songs</button>
+          <button type="button" class="chip chip--sm" data-action="toggle-dark">dark mode</button>
+        </div>
+
+        <div class="chatbox__options chatbox__options--expanded" data-state="expanded">
+          <!-- Expanded: big chips, framing words + keyword -->
+          <button type="button" class="chip chip--bg" data-target="about">
+            <span class="chip__muted">Tell me more</span>
+            <span class="chip__keyword">about</span>
+            <span class="chip__muted">yourself</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-target="work">
+            <span class="chip__muted">What are your lastest</span>
+            <span class="chip__keyword">work</span>
+            <span class="chip__muted">projects?</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-target="awards">
+            <span class="chip__muted">Show me what</span>
+            <span class="chip__keyword">awards</span>
+            <span class="chip__muted">you&rsquo;ve got</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-target="contact">
+            <span class="chip__muted">How can I</span>
+            <span class="chip__keyword">contact</span>
+            <span class="chip__muted">you?</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-target="places">
+            <span class="chip__muted">What are your favourite</span>
+            <span class="chip__keyword">places</span>
+            <span class="chip__muted">in Paris?</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-target="songs">
+            <span class="chip__muted">Which</span>
+            <span class="chip__keyword">songs</span>
+            <span class="chip__muted">do you play on repeat?</span>
+          </button>
+          <button type="button" class="chip chip--bg" data-action="toggle-dark">
+            <span class="chip__muted">Switch to</span>
+            <span class="chip__keyword">dark mode</span>
+          </button>
+        </div>
+
+        <button type="button" class="menu-btn" data-action="toggle-menu" aria-label="Open suggestions" aria-expanded="false">
+          <span class="menu-btn__label">close</span>
+          <span class="menu-btn__icon">
+            <svg aria-hidden="true"><use href="#i-plus"/></svg>
+          </span>
+        </button>
+      </div>
+     </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

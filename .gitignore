@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Local dev config (preview server launch settings)
+.claude/
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp

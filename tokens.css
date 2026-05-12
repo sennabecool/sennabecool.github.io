@@ -1,0 +1,164 @@
+/* =============================================================
+   Design tokens — LKC Portfolio
+   Source of truth for colors, type, space, radii, shadows, etc.
+   Each token group cites the Figma variable name in a comment
+   so the system stays traceable to the design file.
+   ============================================================= */
+:root {
+
+  /* =============================================================
+     1. COLOR — primitives
+     Figma: Color / White, Light Gray, Grey, Dark Grey, Black,
+            Light Neon Green, Neon Green, Subtle Neon Green,
+            Dark Neon Green
+     ============================================================= */
+  --color-white:       #ffffff;
+  --color-light-gray:  #f0f0f0;
+  --color-grey:        #e9ebeb;
+  --color-dark-grey:   #474747;
+  --color-black:       #1e1e1e;
+
+  --color-neon-light:   #ebffc2;
+  --color-neon-subtle:  #daff99;
+  --color-neon:         #80c800;
+  --color-neon-dark:    #4c7600;
+
+  /* =============================================================
+     2. COLOR — semantic (what to reach for in components)
+     ============================================================= */
+  /* Backgrounds */
+  --bg-page:           var(--color-light-gray);
+  --bg-surface:        var(--color-white);
+  --bg-accent-subtle:  var(--color-neon-light);
+  --bg-accent:         var(--color-neon);
+  --bg-accent-hover:   var(--color-neon-subtle);
+  --bg-inverse:        var(--color-black);
+  --bg-glass:          rgba(255, 255, 255, 0.1);
+  --bg-overlay:        rgba(0, 0, 0, 0.16);
+
+  /* Foregrounds (text & icons) */
+  --fg-default:        var(--color-black);
+  --fg-muted:          var(--color-dark-grey);
+  --fg-accent:         var(--color-neon);
+  --fg-on-dark:        var(--color-white);
+  --fg-on-image:       var(--color-white);
+
+  /* Borders */
+  --border-default:    var(--color-grey);
+  --border-strong:     var(--color-dark-grey);
+
+  /* =============================================================
+     3. TYPOGRAPHY
+     Figma: Asta Sans family.  Tokens mirror the Figma text styles:
+            h/h1-mobile, h/h2-mobile, h/h3-mobile, h/h4-mobile,
+            p-mobile, a/Button-bg, a/Button-gst, a/Button-sm
+     ============================================================= */
+  --font-family: "Asta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Weights */
+  --fw-regular:   400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+
+  /* Sizes (mobile scale) */
+  --fz-h1:         32px;  /* h/h1-mobile */
+  --fz-h2:         18px;  /* h/h2-mobile */
+  --fz-h3:         16px;  /* h/h3-mobile */
+  --fz-h4:         11px;  /* h/h4-mobile */
+  --fz-body:       16px;  /* p-mobile */
+  --fz-button-bg:  14px;  /* a/Button-bg */
+  --fz-button-gst: 14px;  /* a/Button-gst */
+  --fz-button-sm:  12px;  /* a/Button-sm */
+
+  /* Line heights */
+  --lh-h1:         40px;
+  --lh-h2:         20px;
+  --lh-h3:         24px;
+  --lh-h4:         20px;
+  --lh-body:       24px;
+  --lh-button-bg:  18px;
+  --lh-button-gst: 24px;
+  --lh-button-sm:  16px;
+
+  /* Letter spacing (only non-zero values) */
+  --ls-h2: -2px;
+  --ls-card-title: -0.36px;
+
+  /* =============================================================
+     4. SPACE — 4px scale
+     Names match the multiplier (space-1 = 4px ... space-14 = 56px)
+     ============================================================= */
+  --space-0:   0;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   28px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-14:  56px;
+
+  /* =============================================================
+     5. RADIUS
+     ============================================================= */
+  --radius-xs:        2px;   /* image inside a card */
+  --radius-sm:        8px;   /* card */
+  --radius-md:        24px;  /* chatbox inner pill */
+  --radius-lg:        36px;  /* chatbox outer pill, back-button */
+  --radius-chip:      40px;  /* chips, question-pills */
+  --radius-pill:      72px;  /* menu toggle button */
+
+  /* =============================================================
+     6. SHADOW
+     ============================================================= */
+  --shadow-floating:    0 4px 16px 4px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover:  0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* =============================================================
+     7. EFFECTS — blur & gradients
+     ============================================================= */
+  --blur-glass: 12px;
+
+  --gradient-image-overlay: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  --gradient-fade-right: linear-gradient(
+    to right,
+    #000 calc(100% - 32px),
+    transparent
+  );
+
+  /* =============================================================
+     8. LAYOUT
+     ============================================================= */
+  --frame-max:   402px;  /* outer mobile frame width */
+  --content-max: 354px;  /* content column inside the frame */
+  --gutter:      var(--space-6);
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--space-4));
+
+  /* Chatbox geometry (used by .app padding and .screen min-height) */
+  --chatbox-floor:  180px;  /* vertical space reserved at the bottom of every screen */
+
+  /* =============================================================
+     9. Z-INDEX
+     ============================================================= */
+  --z-overlay: 40;
+  --z-chatbox: 50;
+
+  /* =============================================================
+     10. MOTION
+     ============================================================= */
+  --easing-default: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast:  150ms;
+  --duration-base:  250ms;
+
+  /* =============================================================
+     11. FOCUS / A11Y
+     ============================================================= */
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--bg-accent);
+}

@@ -1,0 +1,589 @@
+/* =============================================================
+   styles.css — base + components
+   All raw values live in tokens.css. This file only consumes them.
+   ============================================================= */
+
+/* =========================================================
+   Reset
+   ========================================================= */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* =========================================================
+   Page
+   ========================================================= */
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--fz-body);
+  line-height: var(--lh-body);
+  color: var(--fg-default);
+  background: var(--bg-page);
+  min-height: 100svh;
+  display: flex;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  width: 100%;
+  max-width: var(--frame-max);
+  min-height: 100svh;
+  padding: var(--space-8) var(--gutter) calc(var(--chatbox-floor) + var(--space-10) + var(--safe-bottom));
+  position: relative;
+}
+
+/* =========================================================
+   Screens
+   ========================================================= */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+/* Home: anchor the standalone suggestion just above the chatbox */
+.screen-home {
+  min-height: calc(100svh - var(--space-8) - var(--chatbox-floor) - var(--safe-bottom));
+}
+.screen-home > .suggestion {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+/* =========================================================
+   Top bar (home + conversation variant)
+   ========================================================= */
+.top-bar {
+  padding-top: var(--space-6);
+}
+
+.top-bar--conversation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  min-height: 44px;
+}
+
+/* =========================================================
+   Logo
+   ========================================================= */
+.logo { display: block; }
+.logo img { width: 100%; height: 100%; }
+
+.logo-lg { width: var(--space-14); height: var(--space-14); margin-bottom: var(--space-6); }
+.logo-sm { width: 44px; height: 44px; margin-top: var(--space-6); }
+
+/* =========================================================
+   Back button
+   ========================================================= */
+.back-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-default);
+  transition: background-color var(--duration-fast) var(--easing-default);
+}
+.back-btn:hover { background: rgba(0, 0, 0, 0.04); }
+.back-btn svg { width: 24px; height: 24px; }
+
+/* =========================================================
+   Question chip (the "user said" pill at top of conversation)
+   - keyword (strong) stays black; framing words are accent-colored
+   ========================================================= */
+.question-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 13px var(--space-4);
+  background: var(--bg-accent-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-chip);
+  font-size: var(--fz-button-bg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-button-bg);
+  color: var(--fg-accent);
+  white-space: nowrap;
+}
+.question-chip strong {
+  color: var(--fg-default);
+  font-weight: var(--fw-semibold);
+}
+
+/* =========================================================
+   Typography blocks
+   ========================================================= */
+.h1 {
+  margin: 0;
+  font-size: var(--fz-h1);
+  line-height: var(--lh-h1);
+  font-weight: var(--fw-regular);
+  color: var(--fg-default);
+}
+
+.lede {
+  margin: var(--space-3) 0 0 0;
+  font-size: var(--fz-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  color: var(--fg-muted);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* =========================================================
+   Answer (conversation body text)
+   ========================================================= */
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--fz-body);
+  line-height: var(--lh-body);
+  color: var(--fg-muted);
+}
+.answer p { margin: 0; }
+.answer strong { color: var(--fg-default); font-weight: var(--fw-semibold); }
+.answer .suggestions { margin-top: var(--space-3); display: flex; flex-direction: column; }
+
+/* =========================================================
+   Suggestion row (link-like, with corner-down-right icon)
+   ========================================================= */
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  border-top: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-page);
+  color: var(--fg-default);
+  font-size: var(--fz-button-gst);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-button-gst);
+  text-align: left;
+  transition: background-color var(--duration-fast) var(--easing-default);
+}
+.suggestion + .suggestion { border-top: 0; }
+.suggestion:hover { background: rgba(0, 0, 0, 0.03); }
+.suggestion__icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  color: var(--fg-default);
+}
+
+/* =========================================================
+   Project grid (2-col masonry-ish)
+   ========================================================= */
+.project-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.project-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  overflow: hidden;
+  isolation: isolate;
+  display: block;
+  transition:
+    transform var(--duration-base) var(--easing-default),
+    box-shadow var(--duration-base) var(--easing-default);
+}
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.project-card--sm { aspect-ratio: 171 / 148; }
+.project-card--md { grid-column: 1 / -1; height: 148px; }
+.project-card--lg { grid-column: 1 / -1; aspect-ratio: 354 / 308; }
+
+/* Image fills the card inset by the 6px padding */
+.project-card > img {
+  position: absolute;
+  inset: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  object-fit: cover;
+  border-radius: var(--radius-xs);
+  z-index: 0;
+}
+
+/* Gradient overlay on image-backed cards (skip split card) */
+.project-card:not(.project-card--split)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: var(--radius-xs);
+  background: var(--gradient-image-overlay);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.project-card__title {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  z-index: 2;
+  font-size: var(--fz-h2);
+  line-height: var(--lh-h2);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-card-title);
+  color: var(--fg-on-image);
+  margin: 0;
+}
+
+.project-card__tag {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+  display: inline-flex;
+  padding: var(--space-1) 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  font-size: var(--fz-h4);
+  line-height: var(--lh-h4);
+  font-weight: var(--fw-semibold);
+  color: var(--fg-default);
+}
+
+/* Split card: half title (dark), half image */
+.project-card--split {
+  display: flex;
+  gap: 0;
+  padding: 6px;
+  height: 148px;
+}
+.project-card--split > .project-card__title {
+  position: static;
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-3);
+  color: var(--fg-default);
+}
+.project-card--split .project-card__image {
+  position: relative;
+  flex: 1 1 0;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+.project-card--split .project-card__image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* =========================================================
+   Chatbox (fixed at bottom)
+   ========================================================= */
+.chatbox-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-3) + var(--safe-bottom));
+  transform: translateX(-50%);
+  width: calc(100% - var(--space-6));
+  max-width: 378px;
+  z-index: var(--z-chatbox);
+  pointer-events: none;
+  transition:
+    top var(--duration-base) var(--easing-default),
+    bottom var(--duration-base) var(--easing-default),
+    transform var(--duration-base) var(--easing-default);
+}
+
+.chatbox {
+  position: relative;
+  padding: var(--space-3);
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  pointer-events: auto;
+}
+
+.chatbox__inner {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-3) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+.chatbox__prompt {
+  padding: 0 var(--space-1);
+  font-size: var(--fz-body);
+  line-height: var(--lh-body);
+  font-weight: var(--fw-regular);
+  color: var(--fg-muted);
+}
+
+.chatbox__menu {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Animatable mask-fade widths — drive the left & right edge gradients.
+   Registered with @property so the gradient stops can interpolate
+   smoothly when [data-at-start] / [data-at-end] toggle. */
+@property --mask-fade-left {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 32px;
+}
+@property --mask-fade-right {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 32px;
+}
+
+.chatbox__options {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: var(--space-2);
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  --mask-fade-left: 32px;
+  --mask-fade-right: 32px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--mask-fade-left),
+    #000 calc(100% - var(--mask-fade-right)),
+    transparent 100%
+  );
+          mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--mask-fade-left),
+    #000 calc(100% - var(--mask-fade-right)),
+    transparent 100%
+  );
+  transition:
+    --mask-fade-left  var(--duration-base) var(--easing-default),
+    --mask-fade-right var(--duration-base) var(--easing-default);
+}
+
+/* Shrink the corresponding fade when we reach that edge */
+.chatbox__options[data-at-start] { --mask-fade-left: 0px; }
+.chatbox__options[data-at-end]   { --mask-fade-right: 0px; }
+.chatbox__options::-webkit-scrollbar { display: none; }
+
+.chatbox__options--expanded {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  overflow: visible;
+  -webkit-mask-image: none;
+          mask-image: none;
+}
+
+.chatbox__fade { display: none; } /* replaced by CSS mask */
+
+/* =========================================================
+   Chip — green pill, used in the chatbox suggestions
+   ---------------------------------------------------------
+   Anatomy:
+     <button class="chip chip--sm">about</button>
+
+     <button class="chip chip--bg">
+       <span class="chip__muted">Tell me more</span>
+       <span class="chip__keyword">about</span>
+       <span class="chip__muted">yourself</span>
+     </button>
+
+   Sizes:
+     .chip--sm   — single keyword, used when the menu is closed
+     .chip--bg   — multi-word with green framing, used when open
+
+   States:
+     :hover                 — rollover
+     :active                — pressed
+     [aria-current="page"]  — current screen indicator (subtle border)
+   ========================================================= */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: var(--bg-accent-subtle);
+  border: 1px solid transparent;
+  border-radius: var(--radius-chip);
+  color: var(--fg-default);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--easing-default),
+    transform var(--duration-fast) var(--easing-default);
+}
+
+/* Sizes */
+.chip--sm {
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--fz-button-sm);
+  line-height: var(--lh-button-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.chip--bg {
+  height: 44px;
+  padding: 0 var(--space-4);
+  gap: var(--space-1);
+  font-size: var(--fz-button-bg);
+  line-height: var(--lh-button-bg);
+  font-weight: var(--fw-semibold);
+}
+
+/* Anatomy (only meaningful in --bg) */
+.chip__muted   { color: var(--fg-accent); }
+.chip__keyword { color: var(--fg-default); }
+
+/* Base states (apply to both sizes) */
+.chip:hover  { background: var(--bg-accent-hover); }
+.chip:active { transform: scale(0.97); }
+.chip[aria-current="page"] { border-color: var(--border-default); }
+
+/* Stronger states for the big chip — the primary affordance when the menu is open */
+.chip--bg:active                          { background: var(--color-neon-subtle); }
+.chip--bg[aria-current="page"]            {
+  background: var(--bg-accent-hover);
+  border-color: var(--border-default);
+}
+
+/* Menu (toggle) button */
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  padding: var(--space-1);
+  background: var(--bg-inverse);
+  color: var(--fg-on-dark);
+  border-radius: var(--radius-pill);
+  flex: 0 0 auto;
+  transition: background-color var(--duration-fast) var(--easing-default);
+}
+.menu-btn:hover { background: #000; }
+.menu-btn__label {
+  display: none;
+  padding-left: var(--space-3);
+  font-size: var(--fz-button-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-button-sm);
+}
+.menu-btn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+.menu-btn__icon svg {
+  width: 24px;
+  height: 24px;
+  transition: transform var(--duration-base) var(--easing-default);
+}
+
+/* =========================================================
+   Menu-open state
+   ========================================================= */
+/* Transparent click-catcher — closes the menu when the user taps outside */
+.chatbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: var(--z-overlay);
+}
+
+body[data-menu="open"] .chatbox-overlay {
+  pointer-events: auto;
+}
+
+body[data-menu="open"] .chatbox-wrap {
+  bottom: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+body[data-menu="open"] .chatbox__options[data-state="collapsed"] { display: none; }
+body[data-menu="open"] .chatbox__options[data-state="expanded"]  { display: flex; }
+
+body[data-menu="open"] .chatbox__menu {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+body[data-menu="open"] .menu-btn {
+  align-self: flex-end;
+  padding-left: var(--space-4);
+}
+body[data-menu="open"] .menu-btn__label { display: inline; }
+body[data-menu="open"] .menu-btn__icon svg { transform: rotate(45deg); }
+
+/* =========================================================
+   Focus visibility
+   ========================================================= */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* =========================================================
+   Responsive tweaks
+   ========================================================= */
+@media (max-width: 380px) {
+  :root {
+    --fz-h1: 28px;
+    --lh-h1: 36px;
+  }
+  .chatbox-wrap { padding: 0 var(--space-2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
