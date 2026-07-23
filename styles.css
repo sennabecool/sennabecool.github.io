@@ -48,15 +48,21 @@ body {
   gap: var(--space-7);
 }
 
-/* Home: anchor the standalone suggestion just above the chatbox */
+/* Home fills the viewport vertically; chatbox overlays its bottom area */
 .screen-home {
-  min-height: calc(100svh - var(--space-8) - var(--chatbox-floor) - var(--safe-bottom));
+  min-height: 100svh;
 }
-.screen-home > .suggestion {
-  margin-top: auto;
-  margin-bottom: 0;
+/* The home screen owns its vertical spacing so it can start at y=0 and
+   grow naturally when its content needs to scroll behind the fixed chatbox. */
+body[data-screen="home"] .app {
+  padding-top: 0;
+  padding-bottom: 0;
 }
-
+.screen-home {
+  justify-content: safe center;
+  gap: 0;
+  padding: 0 0 var(--chatbox-floor);
+}
 /* =========================================================
    Top bar (home + conversation variant)
    ========================================================= */
@@ -78,7 +84,7 @@ body {
 .logo { display: block; }
 .logo img { width: 100%; height: 100%; }
 
-.logo-lg { width: var(--space-14); height: var(--space-14); margin-bottom: var(--space-6); }
+.logo-lg { width: var(--home-logo-size); height: var(--home-logo-size); margin-bottom: 0; }
 .logo-sm { width: 44px; height: 44px; margin-top: var(--space-6); }
 
 /* =========================================================
@@ -125,9 +131,10 @@ body {
    ========================================================= */
 .h1 {
   margin: 0;
+  font-family: var(--font-family-mono);
   font-size: var(--fz-h1);
   line-height: var(--lh-h1);
-  font-weight: var(--fw-regular);
+  font-weight: var(--fw-bold);
   color: var(--fg-default);
 }
 
@@ -145,6 +152,95 @@ body {
   gap: var(--space-3);
 }
 
+.screen-home .top-bar {
+  padding-top: 0;
+  margin-bottom: var(--home-logo-title-gap);
+  position: relative;
+  min-height: var(--home-logo-size);
+}
+
+.screen-home .top-bar .logo-lg {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+
+.screen-home .hero {
+  gap: var(--home-title-body-gap);
+  margin-bottom: 0;
+}
+
+.screen-home .lede {
+  margin: 0;
+}
+
+.home-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--home-copy-suggestions-gap);
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+[data-leet-text] {
+  display: inline-block;
+  white-space: pre-wrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.question-chip[data-leet-text] {
+  display: inline-flex;
+}
+
+.leet-char {
+  display: inline-block;
+  min-width: 0.28em;
+  opacity: 1;
+  transition:
+    color 70ms linear,
+    text-shadow 90ms linear;
+}
+
+.leet-char[data-leet-tone="muted"] {
+  color: var(--fg-leet-muted);
+  text-shadow: none;
+  transition: text-shadow 90ms linear;
+}
+
+.leet-char[data-leet-tone="accent"] {
+  color: var(--fg-accent);
+  text-shadow: var(--shadow-leet-glow);
+}
+
+.h1 .leet-char {
+  width: 1ch;
+  min-width: 1ch;
+  text-align: center;
+}
+
+.h1:is([data-leet-state="typing"], [data-leet-state="correcting"], [data-leet-state="ready"]) .leet-char[data-char="_"][data-typed="true"] {
+  animation: terminal-underscore-blink 1.05s steps(1, end) infinite;
+}
+
+@keyframes terminal-underscore-blink {
+  0%, 48% { opacity: 1; }
+  49%, 100% { opacity: 0; }
+}
+
+.leet-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+[data-leet-state="hidden"] .leet-char {
+  opacity: 0;
+}
+
 /* =========================================================
    Answer (conversation body text)
    ========================================================= */
@@ -158,20 +254,19 @@ body {
 }
 .answer p { margin: 0; }
 .answer strong { color: var(--fg-default); font-weight: var(--fw-semibold); }
-.answer .suggestions { margin-top: var(--space-3); display: flex; flex-direction: column; }
+.answer .suggestions { margin-top: var(--space-3); }
 
 /* =========================================================
    Suggestion row (link-like, with corner-down-right icon)
    ========================================================= */
 .suggestion {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-2);
   width: 100%;
   height: 44px;
   padding: 0;
-  border-top: 1px solid var(--border-default);
-  border-bottom: 1px solid var(--border-default);
   background: var(--bg-page);
   color: var(--fg-default);
   font-size: var(--fz-button-gst);
@@ -180,13 +275,50 @@ body {
   text-align: left;
   transition: background-color var(--duration-fast) var(--easing-default);
 }
-.suggestion + .suggestion { border-top: 0; }
+.suggestion::after,
+.suggestion:first-child::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--border-default);
+  transform: scaleX(1);
+  transform-origin: left center;
+  transition:
+    transform var(--suggestion-line-reveal-duration) var(--easing-suggestion-line)
+    var(--suggestion-line-delay, 0ms);
+}
+.suggestion::after {
+  bottom: 0;
+  --suggestion-line-delay: var(--suggestion-line-end-delay, 0ms);
+}
+.suggestion:first-child::before {
+  top: 0;
+  --suggestion-line-delay: 0ms;
+}
+.suggestion[data-suggestion-state="hidden"]::before,
+.suggestion[data-suggestion-state="hidden"]::after {
+  transform: scaleX(0);
+}
 .suggestion:hover { background: rgba(0, 0, 0, 0.03); }
 .suggestion__icon {
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
   color: var(--fg-default);
+  opacity: 1;
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    opacity var(--suggestion-icon-reveal-duration) var(--easing-default)
+      var(--suggestion-icon-delay, 0ms),
+    transform var(--suggestion-icon-reveal-duration) var(--easing-spring)
+      var(--suggestion-icon-delay, 0ms);
+}
+.suggestion[data-suggestion-state="hidden"] .suggestion__icon {
+  opacity: 0;
+  transform: scale(var(--suggestion-icon-start-scale));
 }
 
 /* =========================================================
@@ -304,44 +436,180 @@ body {
 /* =========================================================
    Chatbox (fixed at bottom)
    ========================================================= */
+.bottom-navbar-effect {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--bottom-navbar-effect-height);
+  z-index: var(--z-navbar-effect);
+  pointer-events: none;
+}
+
+.bottom-navbar-effect::before,
+.bottom-navbar-effect::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bottom-navbar-effect::before {
+  background: rgba(240, 240, 240, 0.01);
+  backdrop-filter: blur(var(--bottom-navbar-blur));
+  -webkit-backdrop-filter: blur(var(--bottom-navbar-blur));
+  mask-image: var(--bottom-navbar-blur-mask);
+  -webkit-mask-image: var(--bottom-navbar-blur-mask);
+}
+
+.bottom-navbar-effect::after {
+  background: var(--bottom-navbar-background);
+}
+
 .chatbox-wrap {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--space-3) + var(--safe-bottom));
+  bottom: var(--space-3);
   transform: translateX(-50%);
   width: calc(100% - var(--space-6));
   max-width: 378px;
+  height: var(--chatbox-h-closed);
   z-index: var(--z-chatbox);
   pointer-events: none;
+  overflow: visible;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
   transition:
-    top var(--duration-base) var(--easing-default),
-    bottom var(--duration-base) var(--easing-default),
-    transform var(--duration-base) var(--easing-default);
+    top       var(--duration-spring) var(--easing-spring),
+    bottom    var(--duration-spring) var(--easing-spring),
+    width     var(--duration-spring) var(--easing-spring),
+    max-width var(--duration-spring) var(--easing-spring),
+    height    var(--duration-spring) var(--easing-spring),
+    transform var(--duration-spring) var(--easing-spring);
+}
+
+body[data-menu-closing="true"] .chatbox-wrap {
+  z-index: calc(var(--z-chatbox) + 1);
+}
+
+.chatbox-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 24px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: #000;
+  filter: blur(16px);
+  opacity: 0.24;
+  transform: translateY(8px) scale(0.98);
+}
+
+.chatbox-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+.chatbox-clip {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  /* The chatbox inside is laid out at its full open size; this inner
+     clipper makes it grow upward while the outer wrap keeps its shadow. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .chatbox {
   position: relative;
   padding: var(--space-3);
-  background: var(--bg-glass);
-  backdrop-filter: blur(var(--blur-glass));
-  -webkit-backdrop-filter: blur(var(--blur-glass));
+  background: rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(6px) saturate(180%);
+  -webkit-backdrop-filter: blur(6px) saturate(180%);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-floating);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
   pointer-events: auto;
+  /* The chatbox is laid out at its full open size; the wrap clips
+     us so we appear to grow from the bottom up. Flex-shrink: 0 keeps
+     the natural height during the wrap's height transition. */
+  flex-shrink: 0;
+  width: 100%;
+  transition: padding var(--duration-spring) var(--easing-spring);
+}
+
+body[data-screen="home"][data-topbar-intro="playing"] .top-bar .logo-lg,
+body[data-screen="home"][data-topbar-intro="playing"] .desktop-tokens__marker {
+  animation: terminal-navbar-flicker var(--home-topbar-flicker-duration) steps(1, end) both;
+}
+
+body[data-home-text-pending="true"] .screen-home .h1 {
+  position: relative;
+  color: transparent;
+}
+
+body[data-home-text-pending="true"] .screen-home .h1::after {
+  content: "_";
+  position: absolute;
+  inset: 0 auto auto 0;
+  color: var(--fg-default);
+  animation: terminal-title-wait 500ms steps(1, end) infinite;
+}
+
+@keyframes terminal-title-wait {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes terminal-navbar-flicker {
+  0% { opacity: 0; filter: brightness(1.8); }
+  12% { opacity: 0.35; filter: brightness(1.25); }
+  20% { opacity: 0.08; filter: brightness(1.6); }
+  31% { opacity: 0.82; filter: brightness(1.08); }
+  38% { opacity: 0.18; filter: brightness(1.35); }
+  52% { opacity: 0.94; filter: brightness(1.02); }
+  64% { opacity: 0.58; filter: brightness(1.12); }
+  78% { opacity: 0.96; filter: brightness(1); }
+  100% { opacity: 1; filter: none; }
+}
+
+body[data-menu="open"] .chatbox {
+  padding: var(--space-4);
 }
 
 .chatbox__inner {
+  position: relative; /* anchors the absolutely-positioned .menu-btn */
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  border: 0;
   border-radius: var(--radius-md);
   padding: var(--space-5) var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   overflow: hidden;
+  height: var(--chatbox-inner-h-closed);
+  box-shadow: inset 0 0 0 1px var(--border-default);
+  cursor: pointer;
+  transition:
+    height var(--duration-spring) var(--easing-spring);
+}
+
+body[data-menu="open"] .chatbox__inner {
+  height: var(--chatbox-inner-h-open);
 }
 
 .chatbox__prompt {
+  position: relative;
+  z-index: 2;
   padding: 0 var(--space-1);
   font-size: var(--fz-body);
   line-height: var(--lh-body);
@@ -354,26 +622,38 @@ body {
   align-items: flex-end;
   gap: var(--space-1);
   min-width: 0;
+  flex: 0 0 32px;
+  height: 32px;
 }
 
-/* Animatable mask-fade widths — drive the left & right edge gradients.
-   Registered with @property so the gradient stops can interpolate
-   smoothly when [data-at-start] / [data-at-end] toggle. */
-@property --mask-fade-left {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 32px;
+.chatbox__menu::before,
+.chatbox__menu::after {
+  content: "";
+  position: absolute;
+  bottom: var(--space-3);
+  z-index: 2;
+  width: 24px;
+  height: 32px;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 180ms var(--easing-default);
 }
-@property --mask-fade-right {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 32px;
+
+.chatbox__menu::before {
+  left: var(--space-3);
+  background: linear-gradient(to right, var(--bg-surface), rgba(255, 255, 255, 0));
+}
+
+.chatbox__menu::after {
+  right: calc(var(--space-3) + 36px);
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--bg-surface));
 }
 
 .chatbox__options {
   position: relative;
   display: flex;
   flex: 1 1 0;
+  height: 32px;
   min-width: 0;
   gap: var(--space-2);
   align-items: center;
@@ -381,40 +661,25 @@ body {
   overflow-y: hidden;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  --mask-fade-left: 32px;
-  --mask-fade-right: 32px;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 var(--mask-fade-left),
-    #000 calc(100% - var(--mask-fade-right)),
-    transparent 100%
-  );
-          mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 var(--mask-fade-left),
-    #000 calc(100% - var(--mask-fade-right)),
-    transparent 100%
-  );
-  transition:
-    --mask-fade-left  var(--duration-base) var(--easing-default),
-    --mask-fade-right var(--duration-base) var(--easing-default);
 }
 
-/* Shrink the corresponding fade when we reach that edge */
-.chatbox__options[data-at-start] { --mask-fade-left: 0px; }
-.chatbox__options[data-at-end]   { --mask-fade-right: 0px; }
+/* Reserve right-side space for the absolutely-pinned menu-btn so the
+   horizontal chip row doesn't slide underneath it. */
+.chatbox__options[data-state="collapsed"] {
+  flex: 0 0 calc(100% - 36px);
+  width: calc(100% - 36px);
+}
 .chatbox__options::-webkit-scrollbar { display: none; }
 
 .chatbox__options--expanded {
   display: none;
+  flex: 0 1 auto;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
+  height: auto;
   gap: var(--space-2);
   overflow: visible;
-  -webkit-mask-image: none;
-          mask-image: none;
 }
 
 .chatbox__fade { display: none; } /* replaced by CSS mask */
@@ -442,14 +707,16 @@ body {
    ========================================================= */
 .chip {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 3px;
   background: var(--bg-accent-subtle);
   border: 1px solid transparent;
   border-radius: var(--radius-chip);
   color: var(--fg-default);
   font-weight: var(--fw-semibold);
+  overflow: hidden;
   white-space: nowrap;
   transition:
     background-color var(--duration-fast) var(--easing-default),
@@ -468,7 +735,7 @@ body {
 .chip--bg {
   height: 44px;
   padding: 0 var(--space-4);
-  gap: var(--space-1);
+  gap: var(--chip-bg-content-gap);
   font-size: var(--fz-button-bg);
   line-height: var(--lh-button-bg);
   font-weight: var(--fw-semibold);
@@ -486,30 +753,45 @@ body {
 /* Stronger states for the big chip — the primary affordance when the menu is open */
 .chip--bg:active                          { background: var(--color-neon-subtle); }
 .chip--bg[aria-current="page"]            {
-  background: var(--bg-accent-hover);
   border-color: var(--border-default);
 }
 
-/* Menu (toggle) button */
+/* Menu (toggle) button — pinned bottom-right of the inner pill, always
+   on top of the chips regardless of menu state. */
 .menu-btn {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-3);
+  z-index: 3;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 0;
+  width: 32px;
   height: 32px;
   padding: var(--space-1);
   background: var(--bg-inverse);
   color: var(--fg-on-dark);
   border-radius: var(--radius-pill);
-  flex: 0 0 auto;
-  transition: background-color var(--duration-fast) var(--easing-default);
+  overflow: hidden;
+  transition:
+    width 460ms var(--easing-spring),
+    padding 460ms var(--easing-spring),
+    background-color var(--duration-fast) var(--easing-default);
 }
 .menu-btn:hover { background: #000; }
 .menu-btn__label {
-  display: none;
-  padding-left: var(--space-3);
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  color: var(--fg-on-dark);
   font-size: var(--fz-button-sm);
   font-weight: var(--fw-semibold);
   line-height: var(--lh-button-sm);
+  white-space: nowrap;
+  transition:
+    max-width 460ms var(--easing-spring),
+    opacity 320ms var(--easing-default);
 }
 .menu-btn__icon {
   display: inline-flex;
@@ -517,11 +799,12 @@ body {
   justify-content: center;
   width: 24px;
   height: 24px;
+  transform-origin: center;
+  transition: transform 520ms var(--easing-spring);
 }
 .menu-btn__icon svg {
   width: 24px;
   height: 24px;
-  transition: transform var(--duration-base) var(--easing-default);
 }
 
 /* =========================================================
@@ -531,36 +814,73 @@ body {
 .chatbox-overlay {
   position: fixed;
   inset: 0;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.08);
+  opacity: 0;
   pointer-events: none;
   z-index: var(--z-overlay);
+  transition: opacity var(--duration-base) var(--easing-default);
+}
+
+.desktop-identity,
+.desktop-tokens {
+  display: none;
 }
 
 body[data-menu="open"] .chatbox-overlay {
+  opacity: 1;
   pointer-events: auto;
 }
 
 body[data-menu="open"] .chatbox-wrap {
-  bottom: auto;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  bottom: var(--space-2);
+  width: calc(100% - var(--space-4));
+  max-width: calc(var(--frame-max) - var(--space-4));
+  height: var(--chatbox-h-open);
+  border-radius: 40px;
 }
 
+body[data-menu="open"] .chatbox__menu::before,
+body[data-menu="open"] .chatbox__menu::after {
+  opacity: 0;
+}
+body:not([data-menu-closing="true"]) .chatbox__menu:has(.chatbox__options[data-state="collapsed"][data-at-start])::before {
+  opacity: 0;
+}
+body:not([data-menu-closing="true"]) .chatbox__menu:has(.chatbox__options[data-state="collapsed"]:not([data-user-scrolled]))::before {
+  opacity: 0;
+}
+body:not([data-menu-closing="true"]) .chatbox__menu:has(.chatbox__options[data-state="collapsed"][data-at-end])::after {
+  opacity: 0;
+}
 body[data-menu="open"] .chatbox__options[data-state="collapsed"] { display: none; }
 body[data-menu="open"] .chatbox__options[data-state="expanded"]  { display: flex; }
+body[data-menu-closing="true"] .chatbox__menu::after {
+  opacity: 1;
+}
+body[data-menu-closing="true"] .chatbox__menu::before {
+  opacity: 0;
+}
+body[data-menu-closing="true"] .chatbox__options[data-state="collapsed"] .chip { visibility: hidden; }
 
 body[data-menu="open"] .chatbox__menu {
+  flex: 0 1 auto;
+  height: auto;
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-2);
 }
 
 body[data-menu="open"] .menu-btn {
-  align-self: flex-end;
-  padding-left: var(--space-4);
+  gap: 2px;
+  justify-content: flex-end;
+  width: 76px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
 }
-body[data-menu="open"] .menu-btn__label { display: inline; }
-body[data-menu="open"] .menu-btn__icon svg { transform: rotate(45deg); }
+body[data-menu="open"] .menu-btn__label {
+  max-width: 32px;
+  opacity: 1;
+}
+body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
 
 /* =========================================================
    Focus visibility
@@ -573,12 +893,223 @@ body[data-menu="open"] .menu-btn__icon svg { transform: rotate(45deg); }
 /* =========================================================
    Responsive tweaks
    ========================================================= */
-@media (max-width: 380px) {
+@media (min-width: 768px) {
   :root {
-    --fz-h1: 28px;
-    --lh-h1: 36px;
+    --frame-max: var(--desktop-grid-max);
+    --gutter: 0;
+    --safe-bottom: 0;
   }
-  .chatbox-wrap { padding: 0 var(--space-2); }
+
+  .app {
+    max-width: var(--desktop-body-max);
+    padding: 0 var(--desktop-side-margin);
+  }
+
+  .screen-home {
+    display: grid;
+    grid-template-columns: repeat(var(--desktop-grid-columns), minmax(0, 1fr));
+    column-gap: var(--desktop-grid-gutter);
+    align-content: start;
+    position: relative;
+    min-height: 100svh;
+    padding: var(--desktop-hero-top) 0 calc(var(--desktop-navbar-bottom) + var(--chatbox-h-closed) + var(--space-6));
+  }
+
+  .screen-home .top-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: min(var(--desktop-grid-max), calc(100vw - (2 * var(--desktop-side-margin))));
+    height: var(--desktop-navbar-height);
+    z-index: var(--z-topbar);
+    padding: 0;
+    margin: 0;
+    transform: translateX(-50%);
+  }
+
+  .screen-home .top-bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    height: var(--desktop-topbar-effect-height);
+    z-index: 0;
+    pointer-events: none;
+    background: rgba(240, 240, 240, 0.01);
+    backdrop-filter: blur(var(--desktop-topbar-blur));
+    -webkit-backdrop-filter: blur(var(--desktop-topbar-blur));
+    mask-image: var(--desktop-topbar-blur-mask);
+    -webkit-mask-image: var(--desktop-topbar-blur-mask);
+    transform: translateX(-50%);
+  }
+
+  .screen-home .top-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    height: var(--desktop-topbar-effect-height);
+    z-index: 1;
+    pointer-events: none;
+    background: var(--desktop-topbar-background);
+    transform: translateX(-50%);
+  }
+
+  .screen-home .top-bar > * {
+    z-index: 2;
+  }
+
+  .screen-home .logo-lg {
+    position: absolute;
+    top: var(--desktop-header-top);
+    left: var(--desktop-logo-left);
+    width: var(--desktop-logo-size);
+    height: var(--desktop-logo-size);
+  }
+
+  .screen-home .top-bar .logo-lg {
+    top: var(--desktop-header-top);
+    left: var(--desktop-logo-left);
+    width: var(--desktop-logo-size) !important;
+    height: var(--desktop-logo-size) !important;
+  }
+
+  .desktop-identity,
+  .desktop-tokens {
+    display: flex;
+  }
+
+  .desktop-identity {
+    position: absolute;
+    top: var(--desktop-header-top);
+    left: calc(var(--desktop-logo-size) + var(--desktop-identity-gap));
+    flex-direction: column;
+    font-size: var(--desktop-identity-size);
+    line-height: var(--desktop-identity-line);
+    font-weight: var(--fw-medium);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0;
+    color: var(--fg-default);
+    white-space: nowrap;
+  }
+
+  .desktop-identity__version {
+    font: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+  }
+
+  .desktop-tokens {
+    position: absolute;
+    top: var(--desktop-header-top);
+    right: 0;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-size: var(--desktop-identity-size);
+    line-height: var(--desktop-identity-line);
+    font-weight: var(--fw-medium);
+    letter-spacing: 0;
+    color: var(--fg-default);
+  }
+
+  .desktop-tokens__label {
+    align-self: flex-end;
+  }
+
+  .desktop-tokens__control {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    height: 32px;
+    gap: var(--desktop-token-line-gap);
+  }
+
+  .desktop-tokens__stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--desktop-token-stack-gap);
+  }
+
+  .desktop-tokens__label {
+    font-family: var(--font-family-mono);
+    font-size: var(--desktop-token-label-size);
+    line-height: var(--desktop-token-label-line);
+    font-weight: var(--fw-medium);
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0;
+    text-align: right;
+  }
+
+  .desktop-tokens__value {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    width: fit-content;
+    height: var(--desktop-token-height);
+    padding: 0 var(--desktop-token-padding-inline);
+    background: var(--desktop-token-bg);
+    line-height: inherit;
+    text-align: right;
+  }
+
+  .desktop-tokens__marker {
+    width: 2px;
+    height: 32px;
+    background: var(--bg-inverse);
+  }
+
+  .screen-home .hero {
+    position: relative;
+    grid-column: 1 / -1;
+    top: auto;
+    left: auto;
+    width: 100%;
+    gap: var(--desktop-hero-gap);
+    margin: 0;
+    align-items: stretch;
+  }
+
+  .screen-home .h1 {
+    width: 100%;
+    max-width: var(--desktop-grid-max);
+    font-size: var(--desktop-title-size);
+    line-height: var(--desktop-title-line);
+    font-weight: var(--desktop-title-weight);
+  }
+
+  .screen-home .home-content {
+    width: min(100%, var(--desktop-copy-max));
+    max-width: var(--desktop-copy-max);
+    margin: 0 auto;
+  }
+
+  .screen-home .lede {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    font-size: var(--desktop-copy-size);
+    line-height: var(--desktop-copy-line);
+  }
+
+  .chatbox-wrap {
+    bottom: var(--desktop-navbar-bottom);
+    width: var(--desktop-navbar-width);
+    max-width: var(--desktop-navbar-width);
+  }
+
+  body[data-menu="open"] .chatbox-wrap {
+    width: min(calc(100% - var(--space-8)), var(--desktop-navbar-width));
+    max-width: var(--desktop-navbar-width);
+  }
+
+  .screen:not(.screen-home) {
+    max-width: var(--desktop-copy-max);
+    margin: 0 auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

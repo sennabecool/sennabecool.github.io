@@ -4,6 +4,103 @@
    Each token group cites the Figma variable name in a comment
    so the system stays traceable to the design file.
    ============================================================= */
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-LightItalic.otf") format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-RegularItalic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-MediumItalic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Semibold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-SemiboldItalic.otf") format("opentype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SF Mono Local";
+  src: url("assets/fonts/SF-Mono-HeavyItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
 
   /* =============================================================
@@ -14,7 +111,8 @@
      ============================================================= */
   --color-white:       #ffffff;
   --color-light-gray:  #f0f0f0;
-  --color-grey:        #e9ebeb;
+  --color-grey:        #e0e0e0;
+  --color-leet-grey:   #a8a8a8;
   --color-dark-grey:   #474747;
   --color-black:       #1e1e1e;
 
@@ -40,6 +138,7 @@
   --fg-default:        var(--color-black);
   --fg-muted:          var(--color-dark-grey);
   --fg-accent:         var(--color-neon);
+  --fg-leet-muted:     var(--color-leet-grey);
   --fg-on-dark:        var(--color-white);
   --fg-on-image:       var(--color-white);
 
@@ -49,16 +148,18 @@
 
   /* =============================================================
      3. TYPOGRAPHY
-     Figma: Asta Sans family.  Tokens mirror the Figma text styles:
+     Figma: SF Mono family.  Tokens mirror the Figma text styles:
             h/h1-mobile, h/h2-mobile, h/h3-mobile, h/h4-mobile,
             p-mobile, a/Button-bg, a/Button-gst, a/Button-sm
      ============================================================= */
-  --font-family: "Asta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-family: "SF Mono Local", "SF Mono", "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
+  --font-family-mono: var(--font-family);
 
   /* Weights */
   --fw-regular:   400;
   --fw-medium:    500;
   --fw-semibold:  600;
+  --fw-bold:      700;
 
   /* Sizes (mobile scale) */
   --fz-h1:         32px;  /* h/h1-mobile */
@@ -71,7 +172,7 @@
   --fz-button-sm:  12px;  /* a/Button-sm */
 
   /* Line heights */
-  --lh-h1:         40px;
+  --lh-h1:         36px;
   --lh-h2:         20px;
   --lh-h3:         24px;
   --lh-h4:         20px;
@@ -110,12 +211,14 @@
   --radius-lg:        36px;  /* chatbox outer pill, back-button */
   --radius-chip:      40px;  /* chips, question-pills */
   --radius-pill:      72px;  /* menu toggle button */
+  --chip-bg-content-gap: 6px;
 
   /* =============================================================
      6. SHADOW
      ============================================================= */
   --shadow-floating:    0 4px 16px 4px rgba(0, 0, 0, 0.08);
   --shadow-card-hover:  0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-leet-glow:   0 0 3px rgba(128, 200, 0, 0.95), 0 0 9px rgba(128, 200, 0, 0.72);
 
   /* =============================================================
      7. EFFECTS — blur & gradients
@@ -141,21 +244,97 @@
   --gutter:      var(--space-6);
   --safe-bottom: max(env(safe-area-inset-bottom), var(--space-4));
 
+  /* Desktop grid */
+  --desktop-breakpoint: 768px;
+  --desktop-body-max:    1440px;
+  --desktop-side-margin: 80px;
+  --desktop-grid-max:   1280px;
+  --desktop-grid-columns: 16;
+  --desktop-grid-gutter: 24px;
+  --desktop-title-size:  72px;
+  --desktop-title-line:  80px;
+  --desktop-title-weight: var(--fw-medium);
+  --desktop-hero-top:    120px;
+  --desktop-hero-gap:    40px;
+  --desktop-copy-size:   14px;
+  --desktop-copy-line:   24px;
+  --desktop-copy-max:    628px;
+  --desktop-logo-size:   32px;
+  --desktop-logo-left:   0;
+  --desktop-identity-gap: var(--space-3);
+  --desktop-identity-size: 14px;
+  --desktop-identity-line: 16px;
+  --desktop-header-top:  24px;
+  --desktop-navbar-height: 80px;
+  --desktop-topbar-effect-height: 80px;
+  --desktop-topbar-background: linear-gradient(
+    to bottom,
+    var(--bg-page) 0%,
+    rgba(240, 240, 240, 0) 100%
+  );
+  --desktop-topbar-blur: 32px;
+  --desktop-topbar-blur-mask: linear-gradient(
+    to bottom,
+    #000 0%,
+    transparent 100%
+  );
+  --bottom-navbar-effect-height: 180px;
+  --bottom-navbar-background: linear-gradient(
+    to bottom,
+    rgba(240, 240, 240, 0) 0%,
+    var(--bg-page) 100%
+  );
+  --bottom-navbar-blur: var(--desktop-topbar-blur);
+  --bottom-navbar-blur-mask: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 100%
+  );
+  --desktop-navbar-width: 652px;
+  --desktop-navbar-bottom: 80px;
+  --desktop-token-height: 18px;
+  --desktop-token-padding-inline: var(--space-1);
+  --desktop-token-bg: var(--color-grey);
+  --desktop-token-label-size: 12px;
+  --desktop-token-label-line: 8px;
+  --desktop-token-line-gap: var(--space-1);
+  --desktop-token-stack-gap: 6px;
+  /* Home composition */
+  --home-logo-size:       var(--space-14);
+  --home-logo-title-gap:  var(--space-6);
+  --home-title-body-gap:  var(--space-2);
+  --home-copy-suggestions-gap: 40px;
+
   /* Chatbox geometry (used by .app padding and .screen min-height) */
-  --chatbox-floor:  180px;  /* vertical space reserved at the bottom of every screen */
+  --chatbox-floor:        180px;  /* vertical space reserved at the bottom of every screen */
+  --chatbox-h-closed:       128px;  /* Figma Navbar closed height */
+  --chatbox-h-open:         496px;  /* Figma Navbar open height */
+  --chatbox-inner-h-closed: 104px;  /* = h-closed (128) - 2 * chatbox padding (12) */
+  --chatbox-inner-h-open:   464px;  /* = h-open   (496) - 2 * chatbox padding (16) */
 
   /* =============================================================
      9. Z-INDEX
      ============================================================= */
   --z-overlay: 40;
+  --z-navbar-effect: 30;
   --z-chatbox: 50;
+  --z-topbar: 30;
 
   /* =============================================================
      10. MOTION
      ============================================================= */
   --easing-default: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --easing-spring:  cubic-bezier(0.34, 1.15, 0.64, 1);
+  --easing-suggestion-line: linear;
   --duration-fast:  150ms;
   --duration-base:  250ms;
+  --duration-spring: 380ms;
+  --suggestion-line-reveal-duration: 800ms;
+  --suggestion-line-cascade-step: 100ms;
+  --suggestion-icon-reveal-duration: 1100ms;
+  --suggestion-icon-cascade-step: 120ms;
+  --suggestion-icon-start-scale: 0.45;
+  --home-topbar-flicker-duration: 900ms;
 
   /* =============================================================
      11. FOCUS / A11Y
