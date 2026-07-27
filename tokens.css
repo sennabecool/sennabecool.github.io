@@ -131,6 +131,8 @@
   --bg-accent:         var(--color-neon);
   --bg-accent-hover:   var(--color-neon-subtle);
   --bg-inverse:        var(--color-black);
+  --bg-control-hover:  var(--color-grey);
+  --bg-control-pressed: rgba(0, 0, 0, 0.08);
   --bg-glass:          rgba(255, 255, 255, 0.1);
   --bg-overlay:        rgba(0, 0, 0, 0.16);
 
@@ -167,6 +169,7 @@
   --fz-h3:         16px;  /* h/h3-mobile */
   --fz-h4:         11px;  /* h/h4-mobile */
   --fz-body:       16px;  /* p-mobile */
+  --fz-paragraph:  14px;  /* p */
   --fz-button-bg:  14px;  /* a/Button-bg */
   --fz-button-gst: 14px;  /* a/Button-gst */
   --fz-button-sm:  12px;  /* a/Button-sm */
@@ -177,12 +180,14 @@
   --lh-h3:         24px;
   --lh-h4:         20px;
   --lh-body:       24px;
+  --lh-paragraph:  24px;
   --lh-button-bg:  18px;
   --lh-button-gst: 24px;
   --lh-button-sm:  16px;
 
   /* Letter spacing (only non-zero values) */
   --ls-h2: -2px;
+  --ls-paragraph: 0;
   --ls-card-title: -0.36px;
 
   /* =============================================================
@@ -206,12 +211,15 @@
      5. RADIUS
      ============================================================= */
   --radius-xs:        2px;   /* image inside a card */
+  --radius-action:    4px;   /* compact icon action */
   --radius-sm:        8px;   /* card */
   --radius-md:        24px;  /* chatbox inner pill */
   --radius-lg:        36px;  /* chatbox outer pill, back-button */
+  --radius-chatbox-open: 40px;
   --radius-chip:      40px;  /* chips, question-pills */
   --radius-pill:      72px;  /* menu toggle button */
-  --chip-bg-content-gap: 6px;
+  --chip-bg-content-gap: 7px;
+  --chip-bg-padding-block: var(--space-2);
 
   /* =============================================================
      6. SHADOW
@@ -243,6 +251,11 @@
   --content-max: 354px;  /* content column inside the frame */
   --gutter:      var(--space-6);
   --safe-bottom: max(env(safe-area-inset-bottom), var(--space-4));
+  --mobile-topbar-height: 80px;
+  --mobile-topbar-top: var(--space-6);
+  --mobile-topbar-side: var(--gutter);
+  --mobile-topbar-effect-height: 80px;
+  --mobile-content-top: calc(var(--mobile-topbar-height) + var(--space-10));
 
   /* Desktop grid */
   --desktop-breakpoint: 768px;
@@ -256,8 +269,8 @@
   --desktop-title-weight: var(--fw-medium);
   --desktop-hero-top:    120px;
   --desktop-hero-gap:    40px;
-  --desktop-copy-size:   14px;
-  --desktop-copy-line:   24px;
+  --desktop-copy-size:   var(--fz-paragraph);
+  --desktop-copy-line:   var(--lh-paragraph);
   --desktop-copy-max:    628px;
   --desktop-logo-size:   32px;
   --desktop-logo-left:   0;
@@ -291,7 +304,10 @@
     #000 100%
   );
   --desktop-navbar-width: 652px;
+  --desktop-navbar-open-width: calc(var(--desktop-navbar-width) + var(--space-2));
   --desktop-navbar-bottom: 80px;
+  --desktop-navbar-open-bottom: calc(var(--desktop-navbar-bottom) - var(--space-1));
+  --desktop-content-chatbox-gap: var(--space-10);
   --desktop-token-height: 18px;
   --desktop-token-padding-inline: var(--space-1);
   --desktop-token-bg: var(--color-grey);
@@ -302,15 +318,24 @@
   /* Home composition */
   --home-logo-size:       var(--space-14);
   --home-logo-title-gap:  var(--space-6);
-  --home-title-body-gap:  var(--space-2);
+  --home-title-body-gap:  var(--space-6);
   --home-copy-suggestions-gap: 40px;
+  --message-copy-actions-gap: var(--space-4);
+  --message-actions-height: var(--space-6);
+  --message-action-size: var(--space-6);
+  --message-actions-gap: var(--space-3);
+  --message-actions-time-gap: var(--space-5);
+  --message-action-reveal-duration: 480ms;
+  --message-action-reveal-step: 90ms;
+  --message-action-start-scale: 0.45;
+  --message-action-correction-duration: 180ms;
 
   /* Chatbox geometry (used by .app padding and .screen min-height) */
   --chatbox-floor:        180px;  /* vertical space reserved at the bottom of every screen */
   --chatbox-h-closed:       128px;  /* Figma Navbar closed height */
-  --chatbox-h-open:         496px;  /* Figma Navbar open height */
+  --chatbox-h-open:         556px;  /* Includes the multiline expanded chips */
   --chatbox-inner-h-closed: 104px;  /* = h-closed (128) - 2 * chatbox padding (12) */
-  --chatbox-inner-h-open:   464px;  /* = h-open   (496) - 2 * chatbox padding (16) */
+  --chatbox-inner-h-open:   524px;  /* = h-open (556) - 2 * chatbox padding (16) */
 
   /* =============================================================
      9. Z-INDEX

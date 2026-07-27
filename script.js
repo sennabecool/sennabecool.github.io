@@ -11,6 +11,7 @@
   // Small chip positions captured at the last openMenu — reused as the
   // target rects when reversing the FLIP on close.
   const savedSmallChipRects = new Map();
+  let savedClosedWrapRect = null;
   let savedClosedInnerRect = null;
   let savedClosedOptionsRect = null;
   let savedClosedOptionsScrollLeft = 0;
@@ -140,8 +141,10 @@
       if (key) savedSmallChipRects.set(key, c.getBoundingClientRect());
     });
     const inner = document.querySelector('.chatbox__inner');
+    const wrap = document.querySelector('.chatbox-wrap');
     const collapsedOptions = document.querySelector(".chatbox__options[data-state='collapsed']");
     const expandedOptions = document.querySelector(".chatbox__options[data-state='expanded']");
+    savedClosedWrapRect = wrap ? wrap.getBoundingClientRect() : null;
     savedClosedInnerRect = inner ? inner.getBoundingClientRect() : null;
     savedClosedOptionsRect = collapsedOptions ? collapsedOptions.getBoundingClientRect() : null;
     savedClosedOptionsScrollLeft = collapsedOptions ? collapsedOptions.scrollLeft : 0;
@@ -301,6 +304,8 @@
       big.style.justifyContent = 'center';
       big.style.gap = '0';
       big.style.pointerEvents = 'none';
+      const copy = big.querySelector('.chip__copy');
+      if (copy) copy.style.display = 'contents';
       const keyword = big.querySelector('.chip__keyword');
       if (keyword) {
         keyword.style.display = 'inline-block';
@@ -321,12 +326,17 @@
     }
 
     // Kick off the CSS spring on chatbox geometry.
-    wrap.style.height   = 'var(--chatbox-h-closed)';
-    wrap.style.bottom   = 'var(--space-3)';
-    wrap.style.width    = 'calc(100% - var(--space-6))';
-    wrap.style.maxWidth = '378px';
+    if (savedClosedWrapRect) {
+      const closedBottom = window.innerHeight - savedClosedWrapRect.bottom;
+      wrap.style.height = savedClosedWrapRect.height + 'px';
+      wrap.style.bottom = closedBottom + 'px';
+      wrap.style.width = savedClosedWrapRect.width + 'px';
+      wrap.style.maxWidth = savedClosedWrapRect.width + 'px';
+    }
     cb.style.padding    = 'var(--space-3)';
-    inner.style.height  = 'var(--chatbox-inner-h-closed)';
+    inner.style.height  = closedInnerRect
+      ? closedInnerRect.height + 'px'
+      : 'var(--chatbox-inner-h-closed)';
 
     const parentDx = innerOpenRect && closedInnerRect ? closedInnerRect.left - innerOpenRect.left : 0;
     const parentDy = innerOpenRect && closedInnerRect ? closedInnerRect.top  - innerOpenRect.top  : 0;
@@ -424,6 +434,8 @@
           keyword.removeAttribute('style');
         }
         big.querySelectorAll('.chip__muted').forEach(el => el.removeAttribute('style'));
+        const copy = big.querySelector('.chip__copy');
+        if (copy) copy.removeAttribute('style');
       });
 
       if (expandedOptions) {
@@ -442,6 +454,48 @@
     body.dataset.theme = isDark ? 'dark' : 'light';
   }
 
+  function stampHomeMessageTime() {
+    const time = document.querySelector('[data-message-generated-at]');
+    if (!time || time.dateTime) return;
+    const generatedAt = new Date();
+    time.dateTime = generatedAt.toISOString();
+    time.textContent = new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).format(generatedAt);
+    time.setAttribute('aria-label', `Message generated at ${time.textContent}`);
+  }
+
+  async function shareHomeMessage(actionEl) {
+    const text = document.querySelector('.screen-home .lede')?.textContent.trim() || '';
+    const shareData = {
+      title: document.title,
+      text,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${text}\n\n${window.location.href}`);
+        actionEl.title = 'Copied';
+        window.setTimeout(() => { actionEl.title = 'Share'; }, 1200);
+      }
+    } catch (error) {
+      if (error?.name !== 'AbortError') console.error('Unable to share message', error);
+    }
+  }
+
+  function rateHomeMessage(actionEl) {
+    const isPressed = actionEl.getAttribute('aria-pressed') === 'true';
+    document.querySelectorAll('[data-action="rate-message"]').forEach(button => {
+      button.setAttribute('aria-pressed', 'false');
+    });
+    actionEl.setAttribute('aria-pressed', String(!isPressed));
+  }
+
   // --- Click delegation ----------------------------------
   document.addEventListener('click', (e) => {
     const actionEl = e.target.closest('[data-action]');
@@ -451,6 +505,8 @@
         case 'toggle-menu':  toggleMenu(); return;
         case 'close-menu':   closeMenu(); return;
         case 'toggle-dark':  toggleDark(); closeMenu(); return;
+        case 'share-message': shareHomeMessage(actionEl); return;
+        case 'rate-message':  rateHomeMessage(actionEl); return;
       }
     }
 
@@ -1011,7 +1067,8 @@
   menuLeetTexts = leetEffectsByRole.menu;
   topbarLeetTexts = leetEffectsByRole.topbar;
   contentLeetTexts = leetEffectsByRole.content;
-  contentLeetTexts.forEach(effect => effect.setInteractionTokenConsumer(consumeToken));
+  [...topbarLeetTexts, ...contentLeetTexts]
+    .forEach(effect => effect.setInteractionTokenConsumer(consumeToken));
   [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts]
     .forEach(effect => effect.prepareHidden());
   const leetTextByElement = new Map(leetTexts.map(effect => [effect.el, effect]));
@@ -1026,7 +1083,12 @@
       : 1;
 
     topbarLeetTexts.forEach(effect => {
-      effect.playIn({ timingScale, correctionAfterWrite: true });
+      effect.playIn({
+        timingScale,
+        correctionAfterWrite: true,
+        onType: consumeToken,
+        onCorrect: consumeToken
+      });
     });
   }
 
@@ -1184,6 +1246,19 @@
 
   function playScreenLeetTexts(screenName) {
     const activeEffects = [];
+    const activeScreen = screensByName.get(screenName);
+    const screenMessageActions = activeScreen?.querySelector('[data-message-actions-state]');
+    activeScreen?.querySelectorAll('.suggestion').forEach(suggestion => {
+      delete suggestion.dataset.suggestionIconCorrected;
+    });
+    if (screenMessageActions) {
+      screenMessageActions.dataset.messageActionsState = 'hidden';
+      screenMessageActions.dataset.messageActionsCorrected = 'false';
+      screenMessageActions.querySelectorAll('.message-action').forEach(action => {
+        delete action.dataset.messageActionCorrected;
+      });
+    }
+
     contentLeetTexts.forEach(effect => {
       const screen = effect.el.closest('.screen');
       if (!screen || screen.dataset.screenName !== screenName) {
@@ -1197,6 +1272,44 @@
 
     const timingPlan = buildPageLeetTimingPlan(screenName, activeEffects);
     pageLeetTimingPlans.set(screenName, timingPlan);
+
+    timingPlan.items.forEach(item => {
+      const suggestion = item.effect.el.closest('.suggestion');
+      if (!suggestion) return;
+      setMenuTimer(() => {
+        if (body.dataset.screen !== screenName) return;
+        suggestion.dataset.suggestionIconCorrected = 'true';
+      }, item.correctionStart);
+    });
+
+    if (screenMessageActions) {
+      const paragraphItem = timingPlan.items.find(item => item.effect.el.matches('.lede, .answer p'));
+      const revealStart = paragraphItem
+        ? paragraphItem.writeStart + paragraphItem.writeDuration
+        : 0;
+      setMenuTimer(() => {
+        if (body.dataset.screen !== screenName) return;
+        screenMessageActions.dataset.messageActionsState = 'visible';
+      }, revealStart);
+
+      if (paragraphItem) {
+        const actions = [...screenMessageActions.querySelectorAll('.message-action')];
+        const correctionDuration = paragraphItem.correctionDuration;
+        const correctionStep = actions.length > 1
+          ? correctionDuration / actions.length
+          : 0;
+        actions.forEach((action, index) => {
+          setMenuTimer(() => {
+            if (body.dataset.screen !== screenName) return;
+            action.dataset.messageActionCorrected = 'true';
+          }, paragraphItem.correctionStart + index * correctionStep);
+        });
+        setMenuTimer(() => {
+          if (body.dataset.screen !== screenName) return;
+          screenMessageActions.dataset.messageActionsCorrected = 'true';
+        }, paragraphItem.correctionStart + correctionDuration);
+      }
+    }
 
     timingPlan.items.forEach(item => {
       const naturalDuration = item.effect.getLeetWriteDuration();
@@ -1362,6 +1475,7 @@
         const startDelay = restored ? 0 : homeTextStartDelay;
         window.setTimeout(() => {
           if (body.dataset.screen !== 'home') return;
+          stampHomeMessageTime();
           delete body.dataset.homeTextPending;
           playScreenLeetTexts('home');
         }, startDelay);
