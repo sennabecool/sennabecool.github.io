@@ -185,13 +185,17 @@ body[data-screen="home"] .app {
 .screen-home .top-bar::after {
   content: "";
   position: absolute;
-  top: 0;
+  top: calc(0px - var(--viewport-overscan));
   left: 50%;
   width: 100vw;
-  height: var(--mobile-topbar-effect-height);
+  height: calc(var(--viewport-overscan) + var(--mobile-topbar-effect-height));
   z-index: 1;
   pointer-events: none;
-  background: var(--desktop-topbar-background);
+  background: linear-gradient(
+    to bottom,
+    var(--bg-page) 0 var(--viewport-overscan),
+    rgba(240, 240, 240, 0) 100%
+  );
   transform: translateX(-50%);
 }
 
@@ -615,13 +619,15 @@ body[data-screen="home"] .app {
 }
 
 .bottom-navbar-effect::after {
+  inset: 0 0 auto;
+  height: calc(100% + var(--viewport-overscan));
   background: var(--bottom-navbar-background);
 }
 
 .chatbox-wrap {
   position: fixed;
   left: 50%;
-  bottom: var(--space-3);
+  bottom: var(--mobile-navbar-bottom);
   transform: translateX(-50%);
   width: calc(100% - var(--space-6));
   max-width: 378px;
@@ -1158,6 +1164,10 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
     --frame-max: var(--desktop-grid-max);
     --gutter: 0;
     --safe-bottom: 0;
+    --bottom-navbar-effect-height: calc(
+      var(--chatbox-h-closed)
+      + var(--desktop-navbar-bottom)
+    );
   }
 
   .app {
@@ -1207,13 +1217,17 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
   .screen-home .top-bar::after {
     content: "";
     position: absolute;
-    top: 0;
+    top: calc(0px - var(--viewport-overscan));
     left: 50%;
     width: 100vw;
-    height: var(--desktop-topbar-effect-height);
+    height: calc(var(--viewport-overscan) + var(--desktop-topbar-effect-height));
     z-index: 1;
     pointer-events: none;
-    background: var(--desktop-topbar-background);
+    background: linear-gradient(
+      to bottom,
+      var(--bg-page) 0 var(--viewport-overscan),
+      rgba(240, 240, 240, 0) 100%
+    );
     transform: translateX(-50%);
   }
 

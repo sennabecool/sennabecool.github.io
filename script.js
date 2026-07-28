@@ -243,7 +243,9 @@
     //     so text, spacing, movement, and scale change together.
     //   • Total close = DURATION.
     const DURATION = 380;
-    const EASING = 'cubic-bezier(0.34, 1.15, 0.64, 1)';
+    // The chatbox itself keeps its spring, but chip positions must not
+    // overshoot horizontally before the collapsed row takes over.
+    const EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
 
     const expandedChips = [...document.querySelectorAll(".chatbox__options[data-state='expanded'] .chip")];
     const expandedOptions = document.querySelector(".chatbox__options[data-state='expanded']");
@@ -299,16 +301,30 @@
       big.style.left     = (expandedOptionsOpenRect ? open.left - expandedOptionsOpenRect.left : open.left) + 'px';
       big.style.width    = open.width + 'px';
       big.style.height   = open.height + 'px';
+      big.style.minHeight = '0';
       big.style.margin   = '0';
       big.style.overflow = 'hidden';
       big.style.justifyContent = 'center';
       big.style.gap = '0';
       big.style.pointerEvents = 'none';
       const copy = big.querySelector('.chip__copy');
-      if (copy) copy.style.display = 'contents';
+      if (copy) {
+        // Keep a real box and pin it to the pill's geometric center while
+        // width and height animate. This avoids Safari's transient flex
+        // alignment pass that otherwise places the small label too far left.
+        copy.style.display = 'block';
+        copy.style.position = 'absolute';
+        copy.style.left = '50%';
+        copy.style.top = '50%';
+        copy.style.transform = 'translate(-50%, -50%)';
+        copy.style.width = 'max-content';
+        copy.style.maxWidth = 'none';
+        copy.style.whiteSpace = 'nowrap';
+      }
       const keyword = big.querySelector('.chip__keyword');
       if (keyword) {
         keyword.style.display = 'inline-block';
+        keyword.style.marginRight = '0';
         keyword.style.transformOrigin = 'center';
       }
       big.querySelectorAll('.chip__muted').forEach(el => {

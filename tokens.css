@@ -255,6 +255,7 @@
   --mobile-topbar-top: var(--space-6);
   --mobile-topbar-side: var(--gutter);
   --mobile-topbar-effect-height: 80px;
+  --viewport-overscan: 100vh;
   --mobile-content-top: calc(var(--mobile-topbar-height) + var(--space-10));
 
   /* Desktop grid */
@@ -291,16 +292,23 @@
     #000 0%,
     transparent 100%
   );
-  --bottom-navbar-effect-height: 180px;
+  --bottom-navbar-fade-height: var(--space-10);
+  --mobile-navbar-bottom: var(--space-3);
+  --bottom-navbar-effect-height: calc(
+    var(--chatbox-h-closed)
+    + var(--mobile-navbar-bottom)
+  );
   --bottom-navbar-background: linear-gradient(
     to bottom,
     rgba(240, 240, 240, 0) 0%,
+    var(--bg-page) var(--bottom-navbar-fade-height),
     var(--bg-page) 100%
   );
   --bottom-navbar-blur: var(--desktop-topbar-blur);
   --bottom-navbar-blur-mask: linear-gradient(
     to bottom,
     transparent 0%,
+    #000 var(--bottom-navbar-fade-height),
     #000 100%
   );
   --desktop-navbar-width: 652px;
