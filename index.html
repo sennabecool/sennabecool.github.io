@@ -7,72 +7,84 @@
   <title>Leo Cabannes — Human-centered designer crafting with, for, and within AI</title>
   <meta name="description" content="Portfolio of Leo Cabannes, Lead Designer (UX/UI) at Artefact in Paris, designing GenAI use cases for Business Intelligence." />
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
-  <link rel="stylesheet" href="tokens.css?v=92" />
-  <link rel="stylesheet" href="styles.css?v=173" />
+  <link rel="stylesheet" href="tokens.css?v=99" />
+  <link rel="stylesheet" href="styles.css?v=178" />
 </head>
-<body data-screen="home" data-menu="closed" data-home-text-pending="true" data-topbar-intro="playing">
+<body
+  data-screen="home"
+  data-page-layout="hero"
+  data-menu="closed"
+  data-page-text-pending="true"
+  data-shell-intro="playing"
+>
 
   <!-- SVG icon defs reused across the site -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
       <symbol id="i-corner-down-right" viewBox="0 0 24 24">
-        <path d="M6 7v4a3 3 0 0 0 3 3h9m0 0-4-4m4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 7v4a3 3 0 0 0 3 3h9m0 0-4-4m4 4-4 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-chevron-left" viewBox="0 0 24 24">
-        <path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-plus" viewBox="0 0 24 24">
         <path d="M12.5 11.5H18V12.5H12.5V18H11.5V12.5H6V11.5H11.5V6H12.5V11.5Z" fill="currentColor"/>
       </symbol>
       <symbol id="i-share" viewBox="0 0 24 24">
-        <path d="M13 6.5H17.5V11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M10 6.5H8.5C7.39543 6.5 6.5 7.39543 6.5 8.5V15.5C6.5 16.6046 7.39543 17.5 8.5 17.5H15.5C16.6046 17.5 17.5 16.6046 17.5 15.5V14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M17.5 6.5L12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M13 6.5H17.5V11" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 6.5H8.5C7.39543 6.5 6.5 7.39543 6.5 8.5V15.5C6.5 16.6046 7.39543 17.5 8.5 17.5H15.5C16.6046 17.5 17.5 16.6046 17.5 15.5V14" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        <path d="M17.5 6.5L12 12" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
       </symbol>
       <symbol id="i-like" viewBox="0 0 24 24">
-        <path d="M6.5 10.5C6.5 9.94772 6.94772 9.5 7.5 9.5H8C8.55228 9.5 9 9.94772 9 10.5V16.5C9 17.0523 8.55228 17.5 8 17.5H7.5C6.94772 17.5 6.5 17.0523 6.5 16.5V10.5Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M12.2802 5.15761L9.20214 9.23261C9.07102 9.40619 9.00009 9.61778 9.00008 9.83531L8.99993 16.5C8.99992 17.0523 9.44764 17.5 9.99993 17.5L13.6576 17.5C15.0342 17.5 16.2341 16.5631 16.568 15.2276L17.3786 11.9851C17.6942 10.7228 16.7395 9.49999 15.4384 9.49999L12.9999 9.49999L13.6303 8.55852C14.4242 7.37281 14.0497 5.76283 12.8139 5.04934C12.6342 4.94558 12.4053 4.99201 12.2802 5.15761Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M6.5 10.5C6.5 9.94772 6.94772 9.5 7.5 9.5H8C8.55228 9.5 9 9.94772 9 10.5V16.5C9 17.0523 8.55228 17.5 8 17.5H7.5C6.94772 17.5 6.5 17.0523 6.5 16.5V10.5Z" fill="none" stroke="currentColor" stroke-width="1"/>
+        <path d="M12.2802 5.15761L9.20214 9.23261C9.07102 9.40619 9.00009 9.61778 9.00008 9.83531L8.99993 16.5C8.99992 17.0523 9.44764 17.5 9.99993 17.5L13.6576 17.5C15.0342 17.5 16.2341 16.5631 16.568 15.2276L17.3786 11.9851C17.6942 10.7228 16.7395 9.49999 15.4384 9.49999L12.9999 9.49999L13.6303 8.55852C14.4242 7.37281 14.0497 5.76283 12.8139 5.04934C12.6342 4.94558 12.4053 4.99201 12.2802 5.15761Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
       </symbol>
     </defs>
   </svg>
 
   <main class="app">
+    <header class="top-bar site-header" data-shell-header>
+      <a class="logo logo-lg logo-lg--topbar" href="#home" data-target="home" aria-label="Leo Cabannes home">
+        <img src="assets/logo.svg" alt="" />
+      </a>
+      <div class="site-identity" aria-label="Portfolio identity">
+        <span class="site-identity__name" data-leet-role="topbar" data-leet-text>Leo Kaj Cabannes</span>
+        <button class="site-identity__version" type="button" aria-haspopup="listbox" aria-expanded="false" data-leet-role="topbar" data-leet-text>
+          Pico 11.4
+        </button>
+      </div>
+
+      <div class="token-counter" aria-label="Tokens left">
+        <div class="token-counter__control">
+          <div class="token-counter__stack">
+            <span class="token-counter__label" data-leet-role="topbar" data-leet-text>Tokens left</span>
+            <span class="token-counter__value" data-token-counter data-token-target="200000000">0</span>
+          </div>
+          <span class="token-counter__marker" aria-hidden="true"></span>
+        </div>
+      </div>
+    </header>
 
     <!-- =================== HOME =================== -->
-    <section class="screen screen-home" data-screen-name="home" aria-label="Home">
-      <header class="top-bar">
-        <a class="logo logo-lg logo-lg--topbar" href="#home" aria-label="Leo Cabannes home">
-          <img src="assets/logo.svg" alt="" />
-        </a>
-        <div class="desktop-identity" aria-label="Portfolio identity">
-          <span class="desktop-identity__name" data-leet-role="topbar" data-leet-text>Leo Kaj Cabannes</span>
-          <button class="desktop-identity__version" type="button" aria-haspopup="listbox" aria-expanded="false" data-leet-role="topbar" data-leet-text>
-            Pico 11.4
-          </button>
-        </div>
-
-        <div class="desktop-tokens" aria-label="Tokens left">
-          <div class="desktop-tokens__control">
-            <div class="desktop-tokens__stack">
-              <span class="desktop-tokens__label" data-leet-role="topbar" data-leet-text>Tokens left</span>
-              <span class="desktop-tokens__value" data-token-counter data-token-target="200000000">0</span>
-            </div>
-            <span class="desktop-tokens__marker" aria-hidden="true"></span>
-          </div>
-        </div>
-      </header>
-
-      <a class="logo logo-lg home-logo-mobile" href="#home" aria-label="Leo Cabannes home">
+    <section
+      class="screen page page--hero"
+      data-screen-name="home"
+      data-default-screen
+      data-page-layout="hero"
+      data-page-intro="shell"
+      aria-label="Home"
+    >
+      <a class="logo logo-lg page-logo--mobile" href="#home" data-target="home" aria-label="Leo Cabannes home">
         <img src="assets/logo.svg" alt="" />
       </a>
 
-      <div class="hero">
-        <h1 class="h1">Human-centered designer crafting with, for, and within AI_</h1>
-        <div class="home-content">
-          <div class="home-message">
-            <p class="lede">Hello, world! I&rsquo;m a Paris based Lead Designer with 10 years of experience shipping B2B/B2C, AI-native and data-heavy digital products. I partner with stakeholders, PMs, data scientists and engineers to turn complex use cases into intuitive, scalable and measurable user experiences.<br /><br />Recently I&rsquo;ve been focused on AI-assisted research, agentic workflows, and AI coding tools to frame opportunities, test product hypotheses, reduce ambiguity and move faster from product vision to impactful solutions.</p>
+      <div class="page-hero">
+        <h1 class="h1 page-title" data-leet-text>Human-centered designer crafting with, for, and within AI_</h1>
+        <div class="page-content">
+          <div class="message" data-message>
+            <p class="lede" data-message-body data-leet-text>Hello, world! I&rsquo;m a Paris based Lead Designer with 10 years of experience shipping B2B/B2C, AI-native and data-heavy digital products. I partner with stakeholders, PMs, data scientists and engineers to turn complex use cases into intuitive, scalable and measurable user experiences.<br /><br />Recently I&rsquo;ve been focused on AI-assisted research, agentic workflows, and AI coding tools to frame opportunities, test product hypotheses, reduce ambiguity and move faster from product vision to impactful solutions.</p>
 
-            <div class="message-actions" data-message-actions-state="hidden" data-message-actions-corrected="false" aria-label="Message actions">
+            <div class="message-actions" data-message-actions data-message-actions-state="hidden" data-message-actions-corrected="false" aria-label="Message actions">
               <div class="message-actions__buttons">
                 <button type="button" class="message-action" data-action="share-message" aria-label="Share this message" title="Share">
                   <svg aria-hidden="true"><use href="#i-share"/></svg>
@@ -88,18 +100,18 @@
             </div>
           </div>
 
-          <div class="suggestions home-suggestions" aria-label="Suggested prompts">
+          <div class="suggestions" aria-label="Suggested prompts">
             <button type="button" class="suggestion" data-target="about" data-suggestion-state="hidden">
               <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
-              <span>Tell me more about yourself</span>
+              <span data-leet-text>Tell me more about yourself</span>
             </button>
             <button type="button" class="suggestion" data-target="work" data-suggestion-state="hidden">
               <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
-              <span>What are your latest work projects?</span>
+              <span data-leet-text>What are your latest work projects?</span>
             </button>
             <button type="button" class="suggestion" data-target="contact" data-suggestion-state="hidden">
               <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
-              <span>How can I contact you?</span>
+              <span data-leet-text>How can I contact you?</span>
             </button>
           </div>
         </div>
@@ -107,70 +119,70 @@
     </section>
 
     <!-- =================== ABOUT =================== -->
-    <section class="screen screen-about" data-screen-name="about" aria-label="About" hidden>
+    <section class="screen page page--conversation" data-screen-name="about" data-page-layout="conversation" aria-label="About" hidden>
       <header class="top-bar top-bar--conversation">
         <button type="button" class="back-btn" data-action="back" aria-label="Go back">
           <svg aria-hidden="true"><use href="#i-chevron-left"/></svg>
         </button>
-        <span class="question-chip">
+        <span class="question-chip" data-leet-text>
           Tell me more <strong>about</strong> yourself
         </span>
       </header>
 
-      <a class="logo logo-sm" href="#home" aria-label="Leo Cabannes home">
+      <a class="logo logo-sm" href="#home" data-target="home" aria-label="Leo Cabannes home">
         <img src="assets/logo.svg" alt="" />
       </a>
 
       <article class="answer">
-        <p>Bonjour !</p>
-        <p>I&rsquo;m Leo, a <strong>Lead Designer (UX/UI)</strong> based in Paris managing a small team of researchers and product designers at Artefact.</p>
-        <p>Lately my focus has been on designing <strong>GenAI use cases</strong> for Business Intelligence. This pushed me to dig further into data analysis and data engineering, curious to discover how better data foundations can inspire innovative problem-solving products and/or features.</p>
-        <p>When I&rsquo;m not working, you might come across me and my bike in the train, heading out for a <strong>day-long gravel ride</strong> somewhere in France.</p>
+        <p data-leet-text>Bonjour !</p>
+        <p data-leet-text>I&rsquo;m Leo, a <strong>Lead Designer (UX/UI)</strong> based in Paris managing a small team of researchers and product designers at Artefact.</p>
+        <p data-leet-text>Lately my focus has been on designing <strong>GenAI use cases</strong> for Business Intelligence. This pushed me to dig further into data analysis and data engineering, curious to discover how better data foundations can inspire innovative problem-solving products and/or features.</p>
+        <p data-leet-text>When I&rsquo;m not working, you might come across me and my bike in the train, heading out for a <strong>day-long gravel ride</strong> somewhere in France.</p>
 
         <div class="suggestions">
           <button type="button" class="suggestion" data-target="work" data-suggestion-state="hidden">
             <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
-            <span>Where have you worked?</span>
+            <span data-leet-text>Where have you worked?</span>
           </button>
           <button type="button" class="suggestion" data-target="about" data-suggestion-state="hidden">
             <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
-            <span>What schools did you go to?</span>
+            <span data-leet-text>What schools did you go to?</span>
           </button>
         </div>
       </article>
     </section>
 
     <!-- =================== WORK =================== -->
-    <section class="screen screen-work" data-screen-name="work" aria-label="Work" hidden>
+    <section class="screen page page--conversation" data-screen-name="work" data-page-layout="conversation" aria-label="Work" hidden>
       <header class="top-bar top-bar--conversation">
         <button type="button" class="back-btn" data-action="back" aria-label="Go back">
           <svg aria-hidden="true"><use href="#i-chevron-left"/></svg>
         </button>
-        <span class="question-chip">
-          What are your lastest <strong>work</strong> projects?
+        <span class="question-chip" data-leet-text>
+          What are your latest <strong>work</strong> projects?
         </span>
       </header>
 
-      <a class="logo logo-sm" href="#home" aria-label="Leo Cabannes home">
+      <a class="logo logo-sm" href="#home" data-target="home" aria-label="Leo Cabannes home">
         <img src="assets/logo.svg" alt="" />
       </a>
 
-      <p class="lede">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <p class="lede" data-leet-text>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
 
       <div class="project-grid">
         <a class="project-card project-card--sm" href="#" aria-label="Carrefour Links project">
           <img src="assets/carrefour.png" alt="" />
-          <span class="project-card__tag">20 %</span>
-          <span class="project-card__title">Carrefour Links</span>
+          <span class="project-card__tag" data-leet-text>20 %</span>
+          <span class="project-card__title" data-leet-text>Carrefour Links</span>
         </a>
 
         <a class="project-card project-card--sm" href="#" aria-label="Amundi project">
           <img src="assets/amundi.png" alt="" />
-          <span class="project-card__title">Amundi</span>
+          <span class="project-card__title" data-leet-text>Amundi</span>
         </a>
 
         <a class="project-card project-card--md project-card--split" href="#" aria-label="Augmenting perfumers' inspiration with an AI model">
-          <span class="project-card__title project-card__title--dark">Augmenting perfumers&rsquo; inspiration with an AI model</span>
+          <span class="project-card__title project-card__title--dark" data-leet-text>Augmenting perfumers&rsquo; inspiration with an AI model</span>
           <span class="project-card__image">
             <img src="assets/perfumers.png" alt="" />
           </span>
@@ -178,7 +190,7 @@
 
         <a class="project-card project-card--lg" href="#" aria-label="Project four">
           <img src="assets/project4.png" alt="" />
-          <span class="project-card__title">Lorem ipsum dolor sit amet consectetur adipiscing elit.</span>
+          <span class="project-card__title" data-leet-text>Lorem ipsum dolor sit amet consectetur adipiscing elit.</span>
         </a>
       </div>
     </section>
@@ -186,8 +198,6 @@
   </main>
 
   <!-- =================== CHAT INPUT (global, fixed) =================== -->
-  <div class="bottom-navbar-effect" aria-hidden="true"></div>
-
   <!-- Overlay sits OUTSIDE .chatbox-wrap on purpose: the wrap has a transform
        which would otherwise turn it into a containing block, breaking the
        overlay's fixed positioning and putting it above the chatbox in the
@@ -223,7 +233,7 @@
             </button>
             <button type="button" class="chip chip--bg" data-target="work">
               <span class="chip__copy">
-                <span class="chip__muted" data-leet-text>What are your lastest</span>
+                <span class="chip__muted" data-leet-text>What are your latest</span>
                 <span class="chip__keyword">work</span>
                 <span class="chip__muted" data-leet-text>projects?</span>
               </span>
@@ -276,6 +286,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=146"></script>
+  <script src="script.js?v=150"></script>
 </body>
 </html>

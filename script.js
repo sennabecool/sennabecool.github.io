@@ -5,8 +5,19 @@
   const body = document.body;
   const screens = Array.from(document.querySelectorAll('[data-screen-name]'));
   const screensByName = new Map(screens.map(s => [s.dataset.screenName, s]));
+  const defaultScreenName = screens.find(screen => screen.hasAttribute('data-default-screen'))
+    ?.dataset.screenName || screens[0]?.dataset.screenName;
+  const navStack = defaultScreenName ? [defaultScreenName] : [];
+  const rootStyles = getComputedStyle(document.documentElement);
 
-  const navStack = ['home'];
+  function readCssNumber(name, fallback) {
+    const value = parseFloat(rootStyles.getPropertyValue(name));
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  function readCssValue(name, fallback) {
+    return rootStyles.getPropertyValue(name).trim() || fallback;
+  }
 
   // Small chip positions captured at the last openMenu — reused as the
   // target rects when reversing the FLIP on close.
@@ -17,6 +28,7 @@
   let savedClosedOptionsScrollLeft = 0;
   let savedClosedOptionsMaxScroll = 0;
   const menuTimers = new Set();
+  const pageTimers = new Set();
   let openMenuFrame = null;
   let isClosingMenu = false;
   let isProgrammaticCollapsedScroll = false;
@@ -24,31 +36,37 @@
   let contentLeetTexts = [];
   let topbarLeetTexts = [];
   let tokenCounter = null;
-  let topbarIntro = null;
+  let shellIntro = null;
   const pageLeetTimingPlans = new Map();
-  const defaultPageLeetTiming = Object.freeze({
-    minimumTotalDuration: 1200,
-    maximumTotalDuration: 4000,
-    writeBaseDuration: 60,
-    writeCharacterFactor: 22,
-    minimumWriteDuration: 90,
-    maximumWriteDuration: 650,
-    correctionBaseDuration: 80,
-    correctionCharacterFactor: 16,
-    minimumCorrectionDuration: 140,
-    maximumCorrectionDuration: 600,
-    fontReferenceSize: 16,
-    minimumFontFactor: 0.85,
-    maximumFontFactor: 2.2,
-    writeSequenceGap: 1
+  const pageLeetTiming = Object.freeze({
+    minimumTotalDuration: readCssNumber('--page-intro-duration-min', 1200),
+    maximumTotalDuration: readCssNumber('--page-intro-duration-max', 4000),
+    writeBaseDuration: readCssNumber('--page-intro-write-base', 60),
+    writeCharacterFactor: readCssNumber('--page-intro-write-character-factor', 22),
+    minimumWriteDuration: readCssNumber('--page-intro-write-duration-min', 90),
+    maximumWriteDuration: readCssNumber('--page-intro-write-duration-max', 650),
+    correctionBaseDuration: readCssNumber('--page-intro-correction-base', 80),
+    correctionCharacterFactor: readCssNumber('--page-intro-correction-character-factor', 16),
+    minimumCorrectionDuration: readCssNumber('--page-intro-correction-duration-min', 140),
+    maximumCorrectionDuration: readCssNumber('--page-intro-correction-duration-max', 600),
+    fontReferenceSize: readCssNumber('--page-intro-font-reference', 16),
+    minimumFontFactor: readCssNumber('--page-intro-font-factor-min', 0.85),
+    maximumFontFactor: readCssNumber('--page-intro-font-factor-max', 2.2),
+    writeSequenceGap: readCssNumber('--page-intro-sequence-gap', 1)
   });
-  const tokenCounterDuration = 1400;
+  const menuMotion = Object.freeze({
+    duration: readCssNumber('--duration-spring', 380),
+    easing: readCssValue('--easing-flip', 'cubic-bezier(0.32, 0.72, 0, 1)')
+  });
+  const expandedChipLayoutMotion = Object.freeze({
+    duration: readCssNumber('--duration-chip-layout-shift', 220),
+    easing: readCssValue('--easing-default', 'cubic-bezier(0.2, 0.8, 0.2, 1)')
+  });
+  const tokenCounterDuration = readCssNumber('--token-counter-duration', 1400);
   const tokenStorageKey = 'lkc-portfolio:token-balance:v1';
-  const tokenPersistDelay = 120;
-  const homeTextStartDelay = 400;
-  const homeTopbarFlickerDuration = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue('--home-topbar-flicker-duration')
-  ) || 900;
+  const tokenPersistDelay = readCssNumber('--token-persist-delay', 120);
+  const firstPageTextStartDelay = readCssNumber('--page-first-load-delay', 400);
+  const shellIntroDuration = readCssNumber('--shell-intro-duration', 900);
   function clearMenuTimers() {
     menuTimers.forEach(id => clearTimeout(id));
     menuTimers.clear();
@@ -67,9 +85,128 @@
     return id;
   }
 
+  function clearPageTimers() {
+    pageTimers.forEach(id => clearTimeout(id));
+    pageTimers.clear();
+  }
+
+  function setPageTimer(fn, delay) {
+    const id = setTimeout(() => {
+      pageTimers.delete(id);
+      fn();
+    }, delay);
+    pageTimers.add(id);
+    return id;
+  }
+
   function getCurrentChipKey() {
     return body.dataset.screen || navStack[navStack.length - 1];
   }
+
+  function createExpandedChipLayoutAnimator() {
+    const container = document.querySelector(
+      ".chatbox__options[data-state='expanded']"
+    );
+    const chips = container
+      ? [...container.querySelectorAll('.chip--bg')]
+      : [];
+    const previousLayouts = new Map();
+    const activeAnimations = new Map();
+    let observer = null;
+    let layoutFrame = null;
+    let enabled = false;
+
+    function measure() {
+      chips.forEach(chip => {
+        previousLayouts.set(chip, {
+          top: chip.offsetTop,
+          height: chip.offsetHeight
+        });
+      });
+    }
+
+    function cancelAnimations() {
+      activeAnimations.forEach(animation => animation.cancel());
+      activeAnimations.clear();
+    }
+
+    function animateLayoutChanges() {
+      layoutFrame = null;
+      if (!enabled || body.dataset.menu !== 'open' || isClosingMenu) {
+        measure();
+        return;
+      }
+
+      chips.forEach(chip => {
+        const previous = previousLayouts.get(chip);
+        const next = {
+          top: chip.offsetTop,
+          height: chip.offsetHeight
+        };
+        previousLayouts.set(chip, next);
+        if (!previous) return;
+
+        const deltaY = previous.top - next.top;
+        if (Math.abs(deltaY) < 0.5) return;
+
+        activeAnimations.get(chip)?.cancel();
+        const animation = chip.animate(
+          [
+            { translate: `0 ${deltaY}px` },
+            { translate: '0 0' }
+          ],
+          {
+            duration: expandedChipLayoutMotion.duration,
+            easing: expandedChipLayoutMotion.easing
+          }
+        );
+        activeAnimations.set(chip, animation);
+        animation.finished
+          .catch(() => {})
+          .finally(() => {
+            if (activeAnimations.get(chip) === animation) {
+              activeAnimations.delete(chip);
+            }
+          });
+      });
+    }
+
+    function scheduleLayoutAnimation() {
+      if (layoutFrame !== null) cancelAnimationFrame(layoutFrame);
+      layoutFrame = requestAnimationFrame(animateLayoutChanges);
+    }
+
+    function start() {
+      if (!container || !chips.length) return;
+      stop();
+      enabled = true;
+      measure();
+      if (
+        typeof ResizeObserver === 'undefined'
+        || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ) {
+        return;
+      }
+      observer = new ResizeObserver(scheduleLayoutAnimation);
+      chips.forEach(chip => observer.observe(chip));
+    }
+
+    function stop() {
+      enabled = false;
+      observer?.disconnect();
+      observer = null;
+      if (layoutFrame !== null) {
+        cancelAnimationFrame(layoutFrame);
+        layoutFrame = null;
+      }
+      cancelAnimations();
+      previousLayouts.clear();
+    }
+
+    return { start, stop };
+  }
+
+  const expandedChipLayoutAnimator = createExpandedChipLayoutAnimator();
 
   function getCurrentClosedOptionsScroll() {
     const key = getCurrentChipKey();
@@ -94,17 +231,39 @@
     return nextScroll;
   }
 
-  function showScreen(name) {
+  function getScreenNameFromLocation() {
+    const route = decodeURIComponent(window.location.hash.slice(1));
+    return screensByName.has(route) ? route : defaultScreenName;
+  }
+
+  function syncRoute(name, { replace = false } = {}) {
     if (!screensByName.has(name)) return;
+    const method = replace ? 'replaceState' : 'pushState';
+    window.history[method]({ screen: name }, '', `#${encodeURIComponent(name)}`);
+  }
+
+  function showScreen(name, {
+    animate = true,
+    scroll = true,
+    preservePendingState = false
+  } = {}) {
+    const activeScreen = screensByName.get(name);
+    if (!activeScreen) return false;
     screens.forEach(s => {
       const match = s.dataset.screenName === name;
       s.hidden = !match;
     });
     body.dataset.screen = name;
-    if (name !== 'home') delete body.dataset.homeTextPending;
+    body.dataset.pageLayout = activeScreen.dataset.pageLayout || 'content';
+    if (!preservePendingState) delete body.dataset.pageTextPending;
+    clearPageTimers();
     updateActiveChips(name);
-    playScreenLeetTexts(name);
-    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    stampMessageTimes(activeScreen);
+    if (animate) playScreenLeetTexts(name);
+    if (scroll) {
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    }
+    return true;
   }
 
   function updateActiveChips(name) {
@@ -115,17 +274,41 @@
   }
 
   function navigate(target) {
-    if (!target) return;
+    if (!screensByName.has(target)) {
+      closeMenu();
+      return;
+    }
+    if (target === body.dataset.screen) {
+      closeMenu();
+      return;
+    }
     if (target !== navStack[navStack.length - 1]) navStack.push(target);
+    syncRoute(target);
     showScreen(target);
     closeMenu();
   }
 
   function goBack() {
-    if (navStack.length > 1) navStack.pop();
-    showScreen(navStack[navStack.length - 1]);
+    if (navStack.length > 1) {
+      navStack.pop();
+      window.history.back();
+      closeMenu();
+      return;
+    }
+    if (defaultScreenName) {
+      syncRoute(defaultScreenName, { replace: true });
+      showScreen(defaultScreenName);
+    }
     closeMenu();
   }
+
+  window.addEventListener('popstate', () => {
+    const name = getScreenNameFromLocation();
+    if (!name) return;
+    if (navStack[navStack.length - 1] !== name) navStack.push(name);
+    showScreen(name);
+    closeMenu();
+  });
 
   // --- Menu open / close ---------------------------------
   function openMenu() {
@@ -162,6 +345,7 @@
     }
 
     body.dataset.menu = 'open';
+    expandedChipLayoutAnimator.start();
     const btn = document.querySelector('.menu-btn');
     if (btn) {
       btn.setAttribute('aria-expanded', 'true');
@@ -193,7 +377,7 @@
             expandedOptions.style.overflow = '';
             expandedOptions.style.transition = '';
           }
-        }, 380);
+        }, menuMotion.duration);
       }
 
       expanded.forEach((big, i) => {
@@ -212,7 +396,7 @@
             { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, transformOrigin: '0 0' },
             { transform: 'none',                                            transformOrigin: '0 0' }
           ],
-          { duration: 380, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' }
+          { duration: menuMotion.duration, easing: menuMotion.easing }
         );
 
       });
@@ -227,6 +411,7 @@
     if (body.dataset.menu !== 'open' || isClosingMenu) return;
     isClosingMenu = true;
     body.dataset.menuClosing = 'true';
+    expandedChipLayoutAnimator.stop();
     clearMenuTimers();
 
     // Close strategy: animate the real expanded buttons into the collapsed
@@ -234,7 +419,7 @@
     // collapsed row's clipping box, then normal CSS takes back over.
     //
     // Timeline:
-    //   • Wrap / chatbox / inner CSS springs fire at t=0 — 380ms.
+    //   • Wrap / chatbox / inner CSS springs fire at t=0.
     //   • Each expanded chip animates width/height/padding + translate.
     //     Only the keyword text scales, so the pill radius is not warped.
     //   • All chips animate together so movement, scale, and text hiding
@@ -242,12 +427,16 @@
     //   • Expanded green text is removed before the first frame,
     //     so text, spacing, movement, and scale change together.
     //   • Total close = DURATION.
-    const DURATION = 380;
+    const DURATION = menuMotion.duration;
     // The chatbox itself keeps its spring, but chip positions must not
     // overshoot horizontally before the collapsed row takes over.
-    const EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
+    const EASING = menuMotion.easing;
 
     const expandedChips = [...document.querySelectorAll(".chatbox__options[data-state='expanded'] .chip")];
+    const collapsedChips = new Map(
+      [...document.querySelectorAll(".chatbox__options[data-state='collapsed'] .chip")]
+        .map(chip => [chip.dataset.target || chip.dataset.action, chip])
+    );
     const expandedOptions = document.querySelector(".chatbox__options[data-state='expanded']");
     const wrap  = document.querySelector('.chatbox-wrap');
     const cb    = document.querySelector('.chatbox');
@@ -293,9 +482,22 @@
       expandedOptions.style.pointerEvents = 'none';
     }
 
+    const animatedChipStyles = new Map();
     const animatedChips = expandedChips.map((big, i) => {
       big.getAnimations().forEach(a => a.cancel());
       const open = openRects[i];
+      const key = big.dataset.target || big.dataset.action;
+      const collapsedChip = collapsedChips.get(key);
+      const openStyle = getComputedStyle(big);
+      const collapsedStyle = collapsedChip ? getComputedStyle(collapsedChip) : openStyle;
+      const openFontSize = parseFloat(openStyle.fontSize);
+      animatedChipStyles.set(big, {
+        openPadding: `${openStyle.paddingTop} ${openStyle.paddingRight} ${openStyle.paddingBottom} ${openStyle.paddingLeft}`,
+        closedPadding: `${collapsedStyle.paddingTop} ${collapsedStyle.paddingRight} ${collapsedStyle.paddingBottom} ${collapsedStyle.paddingLeft}`,
+        keywordScale: openFontSize
+          ? parseFloat(collapsedStyle.fontSize) / openFontSize
+          : 1
+      });
       big.style.position = 'absolute';
       big.style.top      = (expandedOptionsOpenRect ? open.top - expandedOptionsOpenRect.top : open.top) + 'px';
       big.style.left     = (expandedOptionsOpenRect ? open.left - expandedOptionsOpenRect.left : open.left) + 'px';
@@ -394,20 +596,21 @@
       const dx = target.left - open.left - parentDx - optionsDx;
       const dy = target.top  - open.top  - parentDy - optionsDy;
       const keyword = big.querySelector('.chip__keyword');
+      const transitionStyle = animatedChipStyles.get(big);
 
       big.animate(
         [
           {
             width:      open.width + 'px',
             height:     open.height + 'px',
-            padding:    '0 16px',
+            padding:    transitionStyle.openPadding,
             transform:  'translate(0, 0)',
             transformOrigin: '0 0'
           },
           {
             width:      target.width + 'px',
             height:     target.height + 'px',
-            padding:    '0 12px',
+            padding:    transitionStyle.closedPadding,
             transform:  `translate(${dx}px, ${dy}px)`,
             transformOrigin: '0 0'
           }
@@ -419,7 +622,7 @@
         keyword.animate(
           [
             { transform: 'scale(1)' },
-            { transform: 'scale(0.857)' }
+            { transform: `scale(${transitionStyle.keywordScale})` }
           ],
           { duration: DURATION, easing: EASING, fill: 'both' }
         );
@@ -470,8 +673,7 @@
     body.dataset.theme = isDark ? 'dark' : 'light';
   }
 
-  function stampHomeMessageTime() {
-    const time = document.querySelector('[data-message-generated-at]');
+  function stampMessageTime(time) {
     if (!time || time.dateTime) return;
     const generatedAt = new Date();
     time.dateTime = generatedAt.toISOString();
@@ -483,8 +685,14 @@
     time.setAttribute('aria-label', `Message generated at ${time.textContent}`);
   }
 
-  async function shareHomeMessage(actionEl) {
-    const text = document.querySelector('.screen-home .lede')?.textContent.trim() || '';
+  function stampMessageTimes(scope = document) {
+    scope.querySelectorAll('[data-message-generated-at]').forEach(stampMessageTime);
+  }
+
+  async function shareMessage(actionEl) {
+    const message = actionEl.closest('[data-message]');
+    const text = message?.querySelector('[data-message-body]')?.textContent.trim() || '';
+    if (!text) return;
     const shareData = {
       title: document.title,
       text,
@@ -504,9 +712,10 @@
     }
   }
 
-  function rateHomeMessage(actionEl) {
+  function rateMessage(actionEl) {
     const isPressed = actionEl.getAttribute('aria-pressed') === 'true';
-    document.querySelectorAll('[data-action="rate-message"]').forEach(button => {
+    const actions = actionEl.closest('[data-message-actions]') || actionEl.parentElement;
+    actions?.querySelectorAll('[data-action="rate-message"]').forEach(button => {
       button.setAttribute('aria-pressed', 'false');
     });
     actionEl.setAttribute('aria-pressed', String(!isPressed));
@@ -521,13 +730,14 @@
         case 'toggle-menu':  toggleMenu(); return;
         case 'close-menu':   closeMenu(); return;
         case 'toggle-dark':  toggleDark(); closeMenu(); return;
-        case 'share-message': shareHomeMessage(actionEl); return;
-        case 'rate-message':  rateHomeMessage(actionEl); return;
+        case 'share-message': shareMessage(actionEl); return;
+        case 'rate-message':  rateMessage(actionEl); return;
       }
     }
 
     const targetEl = e.target.closest('[data-target]');
     if (targetEl) {
+      e.preventDefault();
       navigate(targetEl.dataset.target);
       return;
     }
@@ -634,13 +844,19 @@
     let isHiding = false;
     let hoveredIndices = new Set();
     let interactionTokenConsumer = null;
-    const TYPE_STEP = 18;
-    const CORRECTION_DELAY = 280;
-    const CORRECTION_STEP = 18;
-    const FULL_HOVER_DELAY = 70;
-    const FULL_HOVER_LEET_STEP = 10;
-    const FULL_HOVER_CORRECTION_STEP = 10;
-    const ACCENT_DURATION = 80;
+    const TYPE_STEP = readCssNumber('--leet-type-step', 18);
+    const CORRECTION_DELAY = readCssNumber('--leet-correction-delay', 280);
+    const CORRECTION_STEP = readCssNumber('--leet-correction-step', 18);
+    const FULL_HOVER_DELAY = readCssNumber('--leet-hover-delay', 70);
+    const FULL_HOVER_LEET_STEP = readCssNumber('--leet-hover-write-step', 10);
+    const FULL_HOVER_CORRECTION_STEP = readCssNumber('--leet-hover-correction-step', 10);
+    const ACCENT_DURATION = readCssNumber('--leet-accent-duration', 80);
+    const HOVER_RESET_DELAY = readCssNumber('--leet-hover-reset-delay', 220);
+    const HOVER_RESET_STEP = readCssNumber('--leet-hover-reset-step', 14);
+    const LINE_DELAY = readCssNumber('--leet-line-delay', 180);
+    const LINE_CORRECTION_DELAY = readCssNumber('--leet-line-correction-delay', 260);
+    const LINE_CORRECTION_STEP = readCssNumber('--leet-line-correction-step', 16);
+    const HIDE_STEP = readCssNumber('--leet-hide-step', 18);
     const suggestionRow = el.closest('.suggestion');
     if (suggestionRow) {
       const siblingSuggestions = [...suggestionRow.parentElement.children]
@@ -857,7 +1073,11 @@
         .map(([, lineSpans]) => lineSpans);
     }
 
-    function playLinesAsLeet({ lineDelay = 180, correctionDelay = 260, correctionStep = 16 } = {}) {
+    function playLinesAsLeet({
+      lineDelay = LINE_DELAY,
+      correctionDelay = LINE_CORRECTION_DELAY,
+      correctionStep = LINE_CORRECTION_STEP
+    } = {}) {
       clearTimers();
       clearAccentTimers();
       isHiding = false;
@@ -896,7 +1116,11 @@
       });
     }
 
-    function getLinesPlayDuration({ lineDelay = 180, correctionDelay = 260, correctionStep = 16 } = {}) {
+    function getLinesPlayDuration({
+      lineDelay = LINE_DELAY,
+      correctionDelay = LINE_CORRECTION_DELAY,
+      correctionStep = LINE_CORRECTION_STEP
+    } = {}) {
       const lines = getLineGroups();
       if (!lines.length) return 0;
       const lastLine = lines[lines.length - 1];
@@ -972,7 +1196,7 @@
         interactionTokenConsumer?.();
       });
       hoveredIndices = nextHoveredIndices;
-      setTimer(() => clearHover({ stagger: true }), 220);
+      setTimer(() => clearHover({ stagger: true }), HOVER_RESET_DELAY);
     }
 
     function clearHover({ stagger = false } = {}) {
@@ -992,7 +1216,7 @@
         setTimer(() => {
           hoveredIndices.delete(index);
           correctIndex(index);
-        }, staggerIndex * 14);
+        }, staggerIndex * HOVER_RESET_STEP);
       });
     }
 
@@ -1046,7 +1270,7 @@
           delete span.dataset.typed;
           span.textContent = '';
           span.style.opacity = '0';
-        }, index * 18);
+        }, index * HIDE_STEP);
       });
     }
 
@@ -1060,10 +1284,6 @@
 
     return { el, playIn, correct, playLinesAsLeet, replayAllLeet, prepareHidden, hide, clearHover, setInteractionTokenConsumer, getPlayInDuration, getLeetWriteDuration, getCorrectionDuration, getCharacterCount, getLinesPlayDuration };
   }
-
-  document
-    .querySelectorAll('.screen .h1, .screen .lede, .screen .answer p, .screen .question-chip, .screen .suggestion span, .screen .project-card__tag, .screen .project-card__title')
-    .forEach(el => el.setAttribute('data-leet-text', ''));
 
   const leetTexts = [...document.querySelectorAll('[data-leet-text]')].map(createLeetText);
   const leetEffectsByRole = {
@@ -1089,13 +1309,13 @@
     .forEach(effect => effect.prepareHidden());
   const leetTextByElement = new Map(leetTexts.map(effect => [effect.el, effect]));
 
-  function playTopbarLeetTexts() {
+  function playShellLeetTexts() {
     const longestAnimation = Math.max(
       0,
       ...topbarLeetTexts.map(effect => effect.getLeetWriteDuration() + effect.getCorrectionDuration())
     );
-    const timingScale = longestAnimation > homeTopbarFlickerDuration
-      ? homeTopbarFlickerDuration / longestAnimation
+    const timingScale = longestAnimation > shellIntroDuration
+      ? shellIntroDuration / longestAnimation
       : 1;
 
     topbarLeetTexts.forEach(effect => {
@@ -1108,16 +1328,16 @@
     });
   }
 
-  function createTopbarIntro() {
-    let state = body.dataset.topbarIntro || 'done';
+  function createShellIntro() {
+    let state = body.dataset.shellIntro || 'done';
 
     function play() {
       if (state !== 'playing') return;
-      playTopbarLeetTexts();
+      playShellLeetTexts();
       window.setTimeout(() => {
         state = 'done';
-        body.dataset.topbarIntro = state;
-      }, homeTopbarFlickerDuration);
+        body.dataset.shellIntro = state;
+      }, shellIntroDuration);
     }
 
     return {
@@ -1166,25 +1386,25 @@
     const requestedWriteDuration = Number(screen?.dataset.leetWriteDuration);
     const items = activeEffects.map(effect => {
       const fontSize = parseFloat(getComputedStyle(effect.el).fontSize)
-        || defaultPageLeetTiming.fontReferenceSize;
+        || pageLeetTiming.fontReferenceSize;
       const characterCount = Math.max(1, effect.getCharacterCount());
       const fontFactor = clampPageTiming(
-        Math.sqrt(fontSize / defaultPageLeetTiming.fontReferenceSize),
-        defaultPageLeetTiming.minimumFontFactor,
-        defaultPageLeetTiming.maximumFontFactor
+        Math.sqrt(fontSize / pageLeetTiming.fontReferenceSize),
+        pageLeetTiming.minimumFontFactor,
+        pageLeetTiming.maximumFontFactor
       );
       const contentFactor = Math.sqrt(characterCount) * fontFactor;
       const naturalWriteDuration = clampPageTiming(
-        defaultPageLeetTiming.writeBaseDuration
-          + contentFactor * defaultPageLeetTiming.writeCharacterFactor,
-        defaultPageLeetTiming.minimumWriteDuration,
-        defaultPageLeetTiming.maximumWriteDuration
+        pageLeetTiming.writeBaseDuration
+          + contentFactor * pageLeetTiming.writeCharacterFactor,
+        pageLeetTiming.minimumWriteDuration,
+        pageLeetTiming.maximumWriteDuration
       );
       const naturalCorrectionDuration = clampPageTiming(
-        defaultPageLeetTiming.correctionBaseDuration
-          + contentFactor * defaultPageLeetTiming.correctionCharacterFactor,
-        defaultPageLeetTiming.minimumCorrectionDuration,
-        defaultPageLeetTiming.maximumCorrectionDuration
+        pageLeetTiming.correctionBaseDuration
+          + contentFactor * pageLeetTiming.correctionCharacterFactor,
+        pageLeetTiming.minimumCorrectionDuration,
+        pageLeetTiming.maximumCorrectionDuration
       );
       return {
         effect,
@@ -1194,7 +1414,7 @@
         naturalCorrectionDuration
       };
     });
-    const totalWriteGap = defaultPageLeetTiming.writeSequenceGap
+    const totalWriteGap = pageLeetTiming.writeSequenceGap
       * Math.max(0, items.length - 1);
     const naturalWriteDuration = items.reduce(
       (total, item) => total + item.naturalWriteDuration,
@@ -1209,8 +1429,8 @@
       ? requestedTotalDuration
       : clampPageTiming(
         naturalTotalDuration,
-        defaultPageLeetTiming.minimumTotalDuration,
-        defaultPageLeetTiming.maximumTotalDuration
+        pageLeetTiming.minimumTotalDuration,
+        pageLeetTiming.maximumTotalDuration
       );
     const automaticScale = naturalTotalDuration
       ? totalDuration / naturalTotalDuration
@@ -1238,7 +1458,7 @@
       item.writeDuration = item.naturalWriteDuration * writeScale;
       writeStart += item.writeDuration;
       if (index < items.length - 1) {
-        writeStart += defaultPageLeetTiming.writeSequenceGap;
+        writeStart += pageLeetTiming.writeSequenceGap;
       }
     });
 
@@ -1263,17 +1483,19 @@
   function playScreenLeetTexts(screenName) {
     const activeEffects = [];
     const activeScreen = screensByName.get(screenName);
-    const screenMessageActions = activeScreen?.querySelector('[data-message-actions-state]');
+    const screenMessages = [...(activeScreen?.querySelectorAll('[data-message]') || [])];
     activeScreen?.querySelectorAll('.suggestion').forEach(suggestion => {
       delete suggestion.dataset.suggestionIconCorrected;
     });
-    if (screenMessageActions) {
-      screenMessageActions.dataset.messageActionsState = 'hidden';
-      screenMessageActions.dataset.messageActionsCorrected = 'false';
-      screenMessageActions.querySelectorAll('.message-action').forEach(action => {
+    screenMessages.forEach(message => {
+      const messageActions = message.querySelector('[data-message-actions]');
+      if (!messageActions) return;
+      messageActions.dataset.messageActionsState = 'hidden';
+      messageActions.dataset.messageActionsCorrected = 'false';
+      messageActions.querySelectorAll('.message-action').forEach(action => {
         delete action.dataset.messageActionCorrected;
       });
-    }
+    });
 
     contentLeetTexts.forEach(effect => {
       const screen = effect.el.closest('.screen');
@@ -1292,47 +1514,50 @@
     timingPlan.items.forEach(item => {
       const suggestion = item.effect.el.closest('.suggestion');
       if (!suggestion) return;
-      setMenuTimer(() => {
+      setPageTimer(() => {
         if (body.dataset.screen !== screenName) return;
         suggestion.dataset.suggestionIconCorrected = 'true';
       }, item.correctionStart);
     });
 
-    if (screenMessageActions) {
-      const paragraphItem = timingPlan.items.find(item => item.effect.el.matches('.lede, .answer p'));
-      const revealStart = paragraphItem
-        ? paragraphItem.writeStart + paragraphItem.writeDuration
+    screenMessages.forEach(message => {
+      const messageBody = message.querySelector('[data-message-body]');
+      const messageActions = message.querySelector('[data-message-actions]');
+      if (!messageActions) return;
+      const messageItem = timingPlan.items.find(item => item.effect.el === messageBody);
+      const revealStart = messageItem
+        ? messageItem.writeStart + messageItem.writeDuration
         : 0;
-      setMenuTimer(() => {
+      setPageTimer(() => {
         if (body.dataset.screen !== screenName) return;
-        screenMessageActions.dataset.messageActionsState = 'visible';
+        messageActions.dataset.messageActionsState = 'visible';
       }, revealStart);
 
-      if (paragraphItem) {
-        const actions = [...screenMessageActions.querySelectorAll('.message-action')];
-        const correctionDuration = paragraphItem.correctionDuration;
+      if (messageItem) {
+        const actions = [...messageActions.querySelectorAll('.message-action')];
+        const correctionDuration = messageItem.correctionDuration;
         const correctionStep = actions.length > 1
           ? correctionDuration / actions.length
           : 0;
         actions.forEach((action, index) => {
-          setMenuTimer(() => {
+          setPageTimer(() => {
             if (body.dataset.screen !== screenName) return;
             action.dataset.messageActionCorrected = 'true';
-          }, paragraphItem.correctionStart + index * correctionStep);
+          }, messageItem.correctionStart + index * correctionStep);
         });
-        setMenuTimer(() => {
+        setPageTimer(() => {
           if (body.dataset.screen !== screenName) return;
-          screenMessageActions.dataset.messageActionsCorrected = 'true';
-        }, paragraphItem.correctionStart + correctionDuration);
+          messageActions.dataset.messageActionsCorrected = 'true';
+        }, messageItem.correctionStart + correctionDuration);
       }
-    }
+    });
 
     timingPlan.items.forEach(item => {
       const naturalDuration = item.effect.getLeetWriteDuration();
       const timingScale = naturalDuration
         ? item.writeDuration / naturalDuration
         : 1;
-      setMenuTimer(() => {
+      setPageTimer(() => {
         if (body.dataset.screen !== screenName) return;
         item.effect.playIn({
           timingScale,
@@ -1343,7 +1568,7 @@
     });
 
     timingPlan.items.forEach(item => {
-      setMenuTimer(() => {
+      setPageTimer(() => {
         if (body.dataset.screen !== screenName) return;
         item.effect.correct({
           duration: item.correctionDuration,
@@ -1478,35 +1703,48 @@
   }
 
   tokenCounter = createTokenCounter(document.querySelector('[data-token-counter]'));
-  topbarIntro = createTopbarIntro();
+  shellIntro = createShellIntro();
 
   requestAnimationFrame(() => {
     leetTexts
       .filter(effect => !menuLeetTexts.includes(effect) && !contentLeetTexts.includes(effect) && !topbarLeetTexts.includes(effect))
       .forEach(effect => effect.playIn());
-    const initialScreen = body.dataset.screen || 'home';
-    if (initialScreen === 'home') {
-      topbarIntro.play();
-      const startHomeContent = ({ restored = true } = {}) => {
-        const startDelay = restored ? 0 : homeTextStartDelay;
-        window.setTimeout(() => {
-          if (body.dataset.screen !== 'home') return;
-          stampHomeMessageTime();
-          delete body.dataset.homeTextPending;
-          playScreenLeetTexts('home');
-        }, startDelay);
-      };
-      if (tokenCounter) tokenCounter.start({ onComplete: startHomeContent });
-      else startHomeContent();
+
+    const initialScreenName = getScreenNameFromLocation();
+    const initialScreen = screensByName.get(initialScreenName);
+    const usesShellIntro = initialScreen?.dataset.pageIntro === 'shell';
+    navStack.splice(0, navStack.length, initialScreenName);
+    syncRoute(initialScreenName, { replace: true });
+    showScreen(initialScreenName, {
+      animate: false,
+      scroll: false,
+      preservePendingState: usesShellIntro
+    });
+
+    const startInitialPage = ({ restored = true } = {}) => {
+      const startDelay = usesShellIntro && !restored
+        ? firstPageTextStartDelay
+        : 0;
+      window.setTimeout(() => {
+        if (body.dataset.screen !== initialScreenName) return;
+        delete body.dataset.pageTextPending;
+        playScreenLeetTexts(initialScreenName);
+      }, startDelay);
+    };
+
+    shellIntro.play();
+    if (usesShellIntro) {
+      if (tokenCounter) tokenCounter.start({ onComplete: startInitialPage });
+      else startInitialPage();
     } else {
-      playScreenLeetTexts(initialScreen);
+      startInitialPage();
       tokenCounter?.start();
     }
   });
   globalThis.portfolioTextEffects = {
     leetTexts,
     roles: leetEffectsByRole,
-    defaultPageTiming: defaultPageLeetTiming,
+    defaultPageTiming: pageLeetTiming,
     getTimingPlan(screenName = body.dataset.screen) {
       return pageLeetTimingPlans.get(screenName) || null;
     },
@@ -1517,6 +1755,6 @@
   };
   globalThis.portfolioExperience = {
     tokenCounter,
-    topbarIntro
+    shellIntro
   };
 })();
