@@ -185,15 +185,15 @@ body[data-screen="home"] .app {
 .screen-home .top-bar::after {
   content: "";
   position: absolute;
-  top: calc(0px - var(--viewport-overscan));
+  top: 0;
   left: 50%;
   width: 100vw;
-  height: calc(var(--viewport-overscan) + var(--mobile-topbar-effect-height));
+  height: var(--mobile-topbar-effect-height);
   z-index: 1;
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    var(--bg-page) 0 var(--viewport-overscan),
+    var(--bg-page) 0%,
     rgba(240, 240, 240, 0) 100%
   );
   transform: translateX(-50%);
@@ -619,9 +619,47 @@ body[data-screen="home"] .app {
 }
 
 .bottom-navbar-effect::after {
-  inset: 0 0 auto;
-  height: calc(100% + var(--viewport-overscan));
+  inset: 0;
   background: var(--bottom-navbar-background);
+}
+
+/* Safari test: fade each rendered content unit as it crosses the fixed
+   topbar/chatbox exclusion zones. Leet words are already non-breaking
+   inline boxes, which gives the view timeline a stable box per word. */
+@supports (animation-timeline: view()) {
+  .screen :is(.h1, .lede, .answer) .leet-word,
+  .screen-home .home-logo-mobile,
+  .screen .message-actions,
+  .screen .suggestion,
+  .screen .project-card {
+    animation-name: content-viewport-opacity;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: view(
+      block
+      var(--content-view-top-inset)
+      var(--content-view-bottom-inset)
+    );
+    animation-range: cover 0% cover 100%;
+  }
+}
+
+@keyframes content-viewport-opacity {
+  0%,
+  8% {
+    filter: opacity(0);
+  }
+
+  20%,
+  80% {
+    filter: opacity(1);
+  }
+
+  92%,
+  100% {
+    filter: opacity(0);
+  }
 }
 
 .chatbox-wrap {
@@ -1217,15 +1255,15 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
   .screen-home .top-bar::after {
     content: "";
     position: absolute;
-    top: calc(0px - var(--viewport-overscan));
+    top: 0;
     left: 50%;
     width: 100vw;
-    height: calc(var(--viewport-overscan) + var(--desktop-topbar-effect-height));
+    height: var(--desktop-topbar-effect-height);
     z-index: 1;
     pointer-events: none;
     background: linear-gradient(
       to bottom,
-      var(--bg-page) 0 var(--viewport-overscan),
+      var(--bg-page) 0%,
       rgba(240, 240, 240, 0) 100%
     );
     transform: translateX(-50%);

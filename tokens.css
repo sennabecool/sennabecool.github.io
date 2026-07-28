@@ -255,8 +255,9 @@
   --mobile-topbar-top: var(--space-6);
   --mobile-topbar-side: var(--gutter);
   --mobile-topbar-effect-height: 80px;
-  --viewport-overscan: 100vh;
   --mobile-content-top: calc(var(--mobile-topbar-height) + var(--space-10));
+  --content-view-top-inset: var(--mobile-topbar-effect-height);
+  --content-view-bottom-inset: var(--bottom-navbar-effect-height);
 
   /* Desktop grid */
   --desktop-breakpoint: 768px;
