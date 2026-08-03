@@ -93,6 +93,9 @@
   const tokenCounterDuration = readCssNumber('--token-counter-duration', 1400);
   const tokenStorageKey = 'lkc-portfolio:token-balance:v1';
   const tokenPersistDelay = readCssNumber('--token-persist-delay', 120);
+  const menuLabelRevealDelay = readCssNumber('--delay-menu-label-reveal', 220);
+  const menuLeetCascadeStep = readCssNumber('--menu-leet-cascade-step', 70);
+  const menuLeetTimingScale = readCssNumber('--menu-leet-timing-scale', 0.75);
   const firstPageTextStartDelay = readCssNumber('--page-first-load-delay', 400);
   const shellIntroDuration = readCssNumber('--shell-intro-duration', 900);
   function clearMenuTimers() {
@@ -360,7 +363,9 @@
   function openMenu() {
     if (body.dataset.menu === 'open' || isClosingMenu) return;
     clearMenuTimers();
-    menuLeetTexts.forEach(effect => effect.prepareHidden({ reserveSpace: false }));
+    menuLeetTexts
+      .filter(effect => !effect.el.classList.contains('chip__keyword'))
+      .forEach(effect => effect.prepareHidden({ reserveSpace: false }));
 
     // FLIP capture: each small chip's position before the menu opens.
     // Persist these so closeMenu can use them as its FLIP targets.
@@ -922,6 +927,7 @@
   function createLeetText(el) {
     const timers = new Set();
     const accentTimers = new Map();
+    const hoverResetTimers = new Map();
     const pendingOperations = new Set();
     let isHiding = false;
     let hoveredIndices = new Set();
@@ -933,7 +939,7 @@
     const FULL_HOVER_LEET_STEP = readCssNumber('--leet-hover-write-step', 10);
     const FULL_HOVER_CORRECTION_STEP = readCssNumber('--leet-hover-correction-step', 10);
     const ACCENT_DURATION = readCssNumber('--leet-accent-duration', 80);
-    const HOVER_RESET_DELAY = readCssNumber('--leet-hover-reset-delay', 220);
+    const HOVER_RESET_DELAY = readCssNumber('--leet-hover-reset-delay', 420);
     const HOVER_RESET_STEP = readCssNumber('--leet-hover-reset-step', 14);
     const LINE_DELAY = readCssNumber('--leet-line-delay', 180);
     const LINE_CORRECTION_DELAY = readCssNumber('--leet-line-correction-delay', 260);
@@ -1036,6 +1042,8 @@
     function clearTimers() {
       timers.forEach(id => clearTimeout(id));
       timers.clear();
+      hoverResetTimers.forEach(id => clearTimeout(id));
+      hoverResetTimers.clear();
       [...pendingOperations].forEach(cancel => cancel());
     }
 
@@ -1075,6 +1083,8 @@
       clearAccentTimers();
       isHiding = false;
       el.dataset.leetState = 'idle';
+      if (reserveSpace) delete el.dataset.leetCollapsed;
+      else el.dataset.leetCollapsed = 'true';
       if (suggestionRow) suggestionRow.dataset.suggestionState = 'hidden';
       spans.forEach((span, index) => {
         delete span.dataset.typed;
@@ -1095,6 +1105,7 @@
       const operation = createOperation();
       isHiding = false;
       el.dataset.leetState = 'typing';
+      delete el.dataset.leetCollapsed;
       if (suggestionRow) suggestionRow.dataset.suggestionState = 'appearing';
       spans.forEach(span => {
         delete span.dataset.typed;
@@ -1288,9 +1299,22 @@
       return lastIndex;
     }
 
+    function scheduleHoverCorrection(index, delay = HOVER_RESET_DELAY) {
+      const activeTimer = hoverResetTimers.get(index);
+      if (activeTimer) clearTimeout(activeTimer);
+      const id = setTimeout(() => {
+        hoverResetTimers.delete(index);
+        if (!hoveredIndices.has(index)) return;
+        hoveredIndices.delete(index);
+        setChar(index, 'plain');
+        pulseAccent(index);
+        interactionTokenConsumer?.();
+      }, delay);
+      hoverResetTimers.set(index, id);
+    }
+
     function hoverAround(clientX, clientY) {
       if (isHiding || el.dataset.leetState !== 'ready') return;
-      clearTimers();
       let closestIndex = 0;
       let closestDistance = Infinity;
       let closestRect = null;
@@ -1316,51 +1340,44 @@
         0,
         Math.min(closestLinePosition - 2, lineIndices.length - 5)
       );
-      const nextHoveredIndices = new Set(
-        lineIndices
-          .slice(groupStart, groupStart + 5)
-          .filter(index => {
-            const span = spans[index];
-            return span.dataset.char.trim() && span.dataset.leet !== span.dataset.char;
-          })
-      );
+      const nextHoveredIndices = lineIndices
+        .slice(groupStart, groupStart + 5)
+        .filter(index => {
+          const span = spans[index];
+          return span.dataset.char.trim() && span.dataset.leet !== span.dataset.char;
+        });
 
-      hoveredIndices.forEach(index => {
-        if (nextHoveredIndices.has(index)) return;
-        setChar(index, 'plain');
-        interactionTokenConsumer?.();
+      nextHoveredIndices.forEach((index, groupIndex) => {
+        if (!hoveredIndices.has(index)) {
+          hoveredIndices.add(index);
+          setChar(index, 'leet');
+          interactionTokenConsumer?.();
+        }
+        scheduleHoverCorrection(
+          index,
+          HOVER_RESET_DELAY + groupIndex * HOVER_RESET_STEP
+        );
       });
-      nextHoveredIndices.forEach(index => {
-        if (hoveredIndices.has(index)) return;
-        setChar(index, 'leet');
-        interactionTokenConsumer?.();
-      });
-      hoveredIndices = nextHoveredIndices;
-      setTimer(() => clearHover({ stagger: true }), HOVER_RESET_DELAY);
     }
 
     function clearHover({ stagger = false } = {}) {
       if (isHiding || el.dataset.leetState !== 'ready') return;
       const indices = [...hoveredIndices];
-      const correctIndex = index => {
-        setChar(index, 'plain');
-        if (stagger) pulseAccent(index);
-        interactionTokenConsumer?.();
-      };
-      if (!stagger) {
-        hoveredIndices = new Set();
-        indices.forEach(correctIndex);
-        return;
-      }
+      hoverResetTimers.forEach(id => clearTimeout(id));
+      hoverResetTimers.clear();
+      hoveredIndices = new Set();
       indices.forEach((index, staggerIndex) => {
-        setTimer(() => {
-          hoveredIndices.delete(index);
-          correctIndex(index);
-        }, staggerIndex * HOVER_RESET_STEP);
+        const correct = () => {
+          setChar(index, 'plain');
+          if (stagger) pulseAccent(index);
+          interactionTokenConsumer?.();
+        };
+        if (stagger) setTimer(correct, staggerIndex * HOVER_RESET_STEP);
+        else correct();
       });
     }
 
-    function replayAllLeet() {
+    function replayAllLeet({ writeOffset = 0, correctionStartDelay, correctionOffset = 0 } = {}) {
       if (isHiding || el.dataset.leetState !== 'ready') return;
       clearTimers();
       clearAccentTimers();
@@ -1376,9 +1393,12 @@
         setTimer(() => {
           setChar(index, 'leet');
           interactionTokenConsumer?.();
-        }, leetIndex * FULL_HOVER_LEET_STEP);
+        }, writeOffset + leetIndex * FULL_HOVER_LEET_STEP);
       });
 
+      const correctionStart = Number.isFinite(correctionStartDelay)
+        ? correctionStartDelay
+        : writeOffset + Math.max(0, animatedIndices.length - 1) * FULL_HOVER_LEET_STEP + FULL_HOVER_DELAY;
       setTimer(() => {
         el.dataset.leetState = 'correcting';
         animatedIndices.forEach((index, correctionIndex) => {
@@ -1390,9 +1410,30 @@
                 : undefined
             });
             interactionTokenConsumer?.();
-          }, correctionIndex * FULL_HOVER_CORRECTION_STEP);
+          }, correctionOffset + correctionIndex * FULL_HOVER_CORRECTION_STEP);
         });
-      }, Math.max(0, animatedIndices.length - 1) * FULL_HOVER_LEET_STEP + FULL_HOVER_DELAY);
+      }, correctionStart);
+    }
+
+    function showPlain() {
+      clearTimers();
+      clearAccentTimers();
+      isHiding = false;
+      hoveredIndices = new Set();
+      el.dataset.leetState = 'ready';
+      delete el.dataset.leetCollapsed;
+      spans.forEach((span, index) => {
+        setChar(index, 'plain');
+        setTone(index);
+        span.style.minWidth = '';
+        span.style.opacity = '1';
+      });
+    }
+
+    function getAnimatedCharacterCount() {
+      return spans.filter(span => (
+        span.dataset.char.trim() && span.dataset.leet !== span.dataset.char
+      )).length;
     }
 
     function setInteractionTokenConsumer(consumer) {
@@ -1415,11 +1456,13 @@
     }
 
     const fullRolloverTarget = el.closest('.suggestion');
+    const groupedRolloverTarget = el.closest(
+      '.chatbox__options[data-state="expanded"] .chat-bubble'
+    );
     if (fullRolloverTarget) {
       fullRolloverTarget.addEventListener('pointerenter', replayAllLeet);
-    } else {
+    } else if (!groupedRolloverTarget) {
       el.addEventListener('pointermove', e => hoverAround(e.clientX, e.clientY));
-      el.addEventListener('pointerleave', clearHover);
     }
 
     const api = {
@@ -1429,6 +1472,7 @@
       playLinesAsLeet,
       replayAllLeet,
       prepareHidden,
+      showPlain,
       hide,
       clearHover,
       setInteractionTokenConsumer,
@@ -1436,12 +1480,14 @@
       getLeetWriteDuration,
       getCorrectionDuration,
       getCharacterCount,
+      getAnimatedCharacterCount,
       getLastCharacterIndexBefore,
       getLinesPlayDuration
     };
     return api;
   }
 
+  stampMessageTimes(document);
   const leetTexts = [...document.querySelectorAll('[data-leet-text]')].map(createLeetText);
   const leetEffectsByRole = {
     ambient: [],
@@ -1460,11 +1506,39 @@
   menuLeetTexts = leetEffectsByRole.menu;
   topbarLeetTexts = leetEffectsByRole.topbar;
   contentLeetTexts = leetEffectsByRole.content;
-  [...topbarLeetTexts, ...contentLeetTexts]
+  [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts]
     .forEach(effect => effect.setInteractionTokenConsumer(consumeToken));
   [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts]
     .forEach(effect => effect.prepareHidden());
+  menuLeetTexts
+    .filter(effect => effect.el.classList.contains('chip__keyword'))
+    .forEach(effect => effect.showPlain());
   const leetTextByElement = new Map(leetTexts.map(effect => [effect.el, effect]));
+
+  const bubbleHoverWriteStep = readCssNumber('--leet-hover-write-step', 10);
+  const bubbleHoverDelay = readCssNumber('--leet-hover-delay', 70);
+  const bubbleHoverCorrectionStep = readCssNumber('--leet-hover-correction-step', 10);
+  document.querySelectorAll(".chatbox__options[data-state='expanded'] .chat-bubble").forEach(bubble => {
+    const effects = [...bubble.querySelectorAll('.chip__copy > [data-leet-text]')]
+      .map(element => leetTextByElement.get(element))
+      .filter(Boolean);
+    bubble.addEventListener('pointerenter', () => {
+      const counts = effects.map(effect => effect.getAnimatedCharacterCount());
+      const totalCount = counts.reduce((total, count) => total + count, 0);
+      if (!totalCount) return;
+      const correctionStartDelay = Math.max(0, totalCount - 1) * bubbleHoverWriteStep
+        + bubbleHoverDelay;
+      let characterOffset = 0;
+      effects.forEach((effect, index) => {
+        effect.replayAllLeet({
+          writeOffset: characterOffset * bubbleHoverWriteStep,
+          correctionStartDelay,
+          correctionOffset: characterOffset * bubbleHoverCorrectionStep
+        });
+        characterOffset += counts[index];
+      });
+    });
+  });
 
   function playShellLeetTexts() {
     const longestAnimation = Math.max(
@@ -1506,31 +1580,75 @@
   function playMenuLeetTexts() {
     const sequences = [...document.querySelectorAll(".chatbox__options[data-state='expanded'] .chip")]
       .map(chip => {
-      const [prefix, suffix] = [...chip.querySelectorAll('.chip__muted')].map(el => leetTextByElement.get(el));
-        if (!prefix) return null;
-        const prefixDuration = prefix.getPlayInDuration();
-        const prefixLeetDuration = prefix.getLeetWriteDuration();
-        const suffixDuration = suffix ? suffix.getPlayInDuration() : 0;
-        const totalDuration = suffix
-          ? Math.max(prefixDuration, prefixLeetDuration + suffixDuration)
-          : prefixDuration;
-        return { prefix, suffix, prefixDuration, prefixLeetDuration, suffixDuration, totalDuration };
+        const segments = [...chip.querySelectorAll('.chip__muted[data-leet-text]')]
+          .map(el => leetTextByElement.get(el))
+          .filter(Boolean);
+        return segments.length ? { segments } : null;
       })
       .filter(Boolean);
-    const sharedEndTime = Math.max(0, ...sequences.map(sequence => sequence.totalDuration));
-
-    sequences.forEach(({ prefix, suffix, prefixLeetDuration, totalDuration }) => {
-      const timingScale = totalDuration > 0 ? sharedEndTime / totalDuration : 1;
-      const scaledPrefixLeetDuration = prefixLeetDuration * timingScale;
-
-      prefix.playIn({ growFromEmpty: true, timingScale });
-      if (suffix) {
-        setMenuTimer(() => {
-          if (body.dataset.menu !== 'open' || isClosingMenu) return;
-          suffix.playIn({ growFromEmpty: true, timingScale });
-        }, scaledPrefixLeetDuration);
-      }
+    const closeLabel = document.querySelector('.menu-btn__label[data-leet-text]');
+    const closeLabelEffect = closeLabel ? leetTextByElement.get(closeLabel) : null;
+    const isActive = () => body.dataset.menu === 'open' && !isClosingMenu;
+    const waitForCascadeStep = () => new Promise(resolve => {
+      window.setTimeout(resolve, menuLeetCascadeStep);
     });
+
+    async function writeBubble({ segments }) {
+      if (!isActive()) return false;
+      for (const effect of segments) {
+        const result = await effect.playIn({
+          growFromEmpty: true,
+          deferCorrection: true,
+          timingScale: menuLeetTimingScale,
+          onType: consumeToken
+        });
+        if (!result.completed || !isActive()) return false;
+      }
+      return true;
+    }
+
+    async function correctBubble({ segments }) {
+      if (!isActive()) return false;
+      for (const effect of segments) {
+        const result = await effect.correct({
+          timingScale: menuLeetTimingScale,
+          onCorrect: consumeToken
+        });
+        if (!result.completed || !isActive()) return false;
+      }
+      return true;
+    }
+
+    async function runCascade(operation) {
+      const pending = [];
+      for (const [index, item] of sequences.entries()) {
+        if (!isActive()) return false;
+        pending.push(operation(item));
+        if (index < sequences.length - 1) await waitForCascadeStep();
+      }
+      const results = await Promise.all(pending);
+      return results.every(Boolean) && isActive();
+    }
+
+    const sequence = (async () => {
+      const writingCompleted = await runCascade(writeBubble);
+      if (!writingCompleted) return false;
+      return runCascade(correctBubble);
+    })();
+
+    if (closeLabelEffect) {
+      setMenuTimer(() => {
+        if (!isActive()) return;
+        closeLabelEffect.playIn({
+          growFromEmpty: true,
+          correctionAfterWrite: true,
+          onType: consumeToken,
+          onCorrect: consumeToken
+        });
+      }, menuLabelRevealDelay);
+    }
+
+    return sequence;
   }
 
   function clampPageTiming(value, minimum, maximum) {

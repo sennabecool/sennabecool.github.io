@@ -18,6 +18,16 @@ img { display: block; max-width: 100%; }
    ========================================================= */
 html { -webkit-text-size-adjust: 100%; }
 
+html:has(body[data-menu="open"]),
+body[data-menu="open"] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body[data-menu="open"] {
+  touch-action: none;
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--fz-body);
@@ -1050,13 +1060,25 @@ body[data-menu="open"] .chatbox__inner {
   vertical-align: top;
 }
 
-.chip__copy > :not(:last-child) {
+.chip__copy > * {
+  margin-right: 0;
+}
+
+.chip__copy > .chip__muted:first-child:not([data-leet-collapsed="true"]) {
+  margin-right: var(--chip-bg-content-gap);
+}
+
+.chip__copy > .chip__keyword:has(+ .chip__muted:not([data-leet-collapsed="true"])) {
   margin-right: var(--chip-bg-content-gap);
 }
 
 .chat-bubble .chip__muted[data-leet-text] {
   display: inline;
   white-space: normal;
+}
+
+.chat-bubble .chip__muted[data-leet-collapsed="true"] {
+  display: none;
 }
 
 .chip__muted   { color: var(--fg-accent); }

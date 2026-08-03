@@ -414,9 +414,11 @@
   --duration-menu-icon: 520ms;
   --duration-menu-label-reveal: 320ms;
   --delay-menu-label-reveal: 220ms;
+  --menu-leet-cascade-step: 70ms;
+  --menu-leet-timing-scale: 0.75;
   --duration-chip-layout-shift: 280ms;
   --duration-edge-indicator: 180ms;
-  --duration-terminal-cursor: 500ms;
+  --duration-terminal-cursor: 1000ms;
   --duration-viewport-opacity: 1ms;
   --duration-leet-color: 70ms;
   --duration-leet-shadow: 90ms;
@@ -459,7 +461,7 @@
   --leet-hover-delay: 70ms;
   --leet-hover-write-step: 10ms;
   --leet-hover-correction-step: 10ms;
-  --leet-hover-reset-delay: 220ms;
+  --leet-hover-reset-delay: 420ms;
   --leet-hover-reset-step: 14ms;
   --leet-line-delay: 180ms;
   --leet-line-correction-delay: 260ms;
