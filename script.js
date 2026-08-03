@@ -7,7 +7,9 @@
   const screensByName = new Map(screens.map(s => [s.dataset.screenName, s]));
   const defaultScreenName = screens.find(screen => screen.hasAttribute('data-default-screen'))
     ?.dataset.screenName || screens[0]?.dataset.screenName;
+  const viewportBoundaryElement = document.querySelector('.chatbox-wrap');
   const navStack = defaultScreenName ? [defaultScreenName] : [];
+  const usesHashRouting = body.dataset.routing !== 'document';
   const rootStyles = getComputedStyle(document.documentElement);
 
   function readCssNumber(name, fallback) {
@@ -28,8 +30,8 @@
   let savedClosedOptionsScrollLeft = 0;
   let savedClosedOptionsMaxScroll = 0;
   const menuTimers = new Set();
-  const pageTimers = new Set();
   let openMenuFrame = null;
+  let openingShellAnimation = null;
   let isClosingMenu = false;
   let isProgrammaticCollapsedScroll = false;
   let menuLeetTexts = [];
@@ -37,6 +39,13 @@
   let topbarLeetTexts = [];
   let tokenCounter = null;
   let shellIntro = null;
+  let viewportRevealObserver = null;
+  let viewportRevealQueue = [];
+  let viewportRevealIsPlaying = false;
+  let viewportRevealIsBlocked = false;
+  let viewportRevealScreenName = '';
+  let viewportRevealInitialEffects = new Set();
+  let pageSequenceVersion = 0;
   const pageLeetTimingPlans = new Map();
   const pageLeetTiming = Object.freeze({
     minimumTotalDuration: readCssNumber('--page-intro-duration-min', 1200),
@@ -52,7 +61,15 @@
     fontReferenceSize: readCssNumber('--page-intro-font-reference', 16),
     minimumFontFactor: readCssNumber('--page-intro-font-factor-min', 0.85),
     maximumFontFactor: readCssNumber('--page-intro-font-factor-max', 2.2),
-    writeSequenceGap: readCssNumber('--page-intro-sequence-gap', 1)
+    foldBottomInset: readCssNumber(
+      '--page-intro-fold-bottom-inset',
+      readCssNumber('--chatbox-floor', 180)
+    )
+  });
+  const viewportRevealTiming = Object.freeze({
+    minimumTotalDuration: readCssNumber('--viewport-reveal-duration-min', 600),
+    maximumTotalDuration: readCssNumber('--viewport-reveal-duration-max', 1800),
+    threshold: readCssNumber('--viewport-reveal-threshold', 0.15)
   });
   const menuMotion = Object.freeze({
     duration: readCssNumber('--duration-spring', 380),
@@ -62,6 +79,17 @@
     duration: readCssNumber('--duration-chip-layout-shift', 220),
     easing: readCssValue('--easing-default', 'cubic-bezier(0.2, 0.8, 0.2, 1)')
   });
+
+  function animateShellHeight(element, fromHeight, toHeight) {
+    if (!element || !Number.isFinite(fromHeight) || !Number.isFinite(toHeight)) return null;
+    return element.animate(
+      [
+        { height: fromHeight + 'px' },
+        { height: toHeight + 'px' }
+      ],
+      { duration: menuMotion.duration, easing: menuMotion.easing, fill: 'both' }
+    );
+  }
   const tokenCounterDuration = readCssNumber('--token-counter-duration', 1400);
   const tokenStorageKey = 'lkc-portfolio:token-balance:v1';
   const tokenPersistDelay = readCssNumber('--token-persist-delay', 120);
@@ -85,18 +113,8 @@
     return id;
   }
 
-  function clearPageTimers() {
-    pageTimers.forEach(id => clearTimeout(id));
-    pageTimers.clear();
-  }
-
-  function setPageTimer(fn, delay) {
-    const id = setTimeout(() => {
-      pageTimers.delete(id);
-      fn();
-    }, delay);
-    pageTimers.add(id);
-    return id;
+  function invalidatePageSequences() {
+    pageSequenceVersion += 1;
   }
 
   function getCurrentChipKey() {
@@ -110,18 +128,31 @@
     const chips = container
       ? [...container.querySelectorAll('.chip--bg')]
       : [];
-    const previousLayouts = new Map();
+    const observedCopies = chips
+      .map(chip => chip.querySelector('.chip__copy'))
+      .filter(Boolean);
+    const targetHeights = new Map();
     const activeAnimations = new Map();
     let observer = null;
     let layoutFrame = null;
     let enabled = false;
 
+    function getNaturalHeight(chip) {
+      const copy = chip.querySelector('.chip__copy');
+      const style = getComputedStyle(chip);
+      const contentHeight = copy ? copy.getBoundingClientRect().height : 0;
+      const verticalChrome =
+        parseFloat(style.paddingTop)
+        + parseFloat(style.paddingBottom)
+        + parseFloat(style.borderTopWidth)
+        + parseFloat(style.borderBottomWidth);
+      const minimumHeight = parseFloat(style.minHeight) || 0;
+      return Math.max(minimumHeight, contentHeight + verticalChrome);
+    }
+
     function measure() {
       chips.forEach(chip => {
-        previousLayouts.set(chip, {
-          top: chip.offsetTop,
-          height: chip.offsetHeight
-        });
+        targetHeights.set(chip, getNaturalHeight(chip));
       });
     }
 
@@ -138,36 +169,34 @@
       }
 
       chips.forEach(chip => {
-        const previous = previousLayouts.get(chip);
-        const next = {
-          top: chip.offsetTop,
-          height: chip.offsetHeight
-        };
-        previousLayouts.set(chip, next);
-        if (!previous) return;
+        const previousTarget = targetHeights.get(chip);
+        const nextTarget = getNaturalHeight(chip);
+        targetHeights.set(chip, nextTarget);
+        if (previousTarget === undefined || Math.abs(previousTarget - nextTarget) < 0.5) return;
 
-        const deltaY = previous.top - next.top;
-        if (Math.abs(deltaY) < 0.5) return;
+        const currentHeight = chip.getBoundingClientRect().height;
+        if (Math.abs(currentHeight - nextTarget) < 0.5) return;
 
         activeAnimations.get(chip)?.cancel();
         const animation = chip.animate(
           [
-            { translate: `0 ${deltaY}px` },
-            { translate: '0 0' }
+            { height: currentHeight + 'px' },
+            { height: nextTarget + 'px' }
           ],
           {
             duration: expandedChipLayoutMotion.duration,
-            easing: expandedChipLayoutMotion.easing
+            easing: expandedChipLayoutMotion.easing,
+            fill: 'both'
           }
         );
         activeAnimations.set(chip, animation);
         animation.finished
-          .catch(() => {})
-          .finally(() => {
-            if (activeAnimations.get(chip) === animation) {
-              activeAnimations.delete(chip);
-            }
-          });
+          .then(() => {
+            if (activeAnimations.get(chip) !== animation) return;
+            activeAnimations.delete(chip);
+            animation.cancel();
+          })
+          .catch(() => {});
       });
     }
 
@@ -188,7 +217,7 @@
         return;
       }
       observer = new ResizeObserver(scheduleLayoutAnimation);
-      chips.forEach(chip => observer.observe(chip));
+      observedCopies.forEach(copy => observer.observe(copy));
     }
 
     function stop() {
@@ -200,7 +229,7 @@
         layoutFrame = null;
       }
       cancelAnimations();
-      previousLayouts.clear();
+      targetHeights.clear();
     }
 
     return { start, stop };
@@ -232,11 +261,13 @@
   }
 
   function getScreenNameFromLocation() {
+    if (!usesHashRouting) return defaultScreenName;
     const route = decodeURIComponent(window.location.hash.slice(1));
     return screensByName.has(route) ? route : defaultScreenName;
   }
 
   function syncRoute(name, { replace = false } = {}) {
+    if (!usesHashRouting) return;
     if (!screensByName.has(name)) return;
     const method = replace ? 'replaceState' : 'pushState';
     window.history[method]({ screen: name }, '', `#${encodeURIComponent(name)}`);
@@ -256,7 +287,7 @@
     body.dataset.screen = name;
     body.dataset.pageLayout = activeScreen.dataset.pageLayout || 'content';
     if (!preservePendingState) delete body.dataset.pageTextPending;
-    clearPageTimers();
+    invalidatePageSequences();
     updateActiveChips(name);
     stampMessageTimes(activeScreen);
     if (animate) playScreenLeetTexts(name);
@@ -273,9 +304,13 @@
     });
   }
 
-  function navigate(target) {
+  function navigate(target, fallbackHref = '') {
     if (!screensByName.has(target)) {
       closeMenu();
+      if (fallbackHref) {
+        const url = new URL(fallbackHref, document.baseURI);
+        window.location.assign(url.href);
+      }
       return;
     }
     if (target === body.dataset.screen) {
@@ -288,14 +323,24 @@
     closeMenu();
   }
 
-  function goBack() {
+  function goBack(fallbackHref = '') {
     if (navStack.length > 1) {
       navStack.pop();
       window.history.back();
       closeMenu();
       return;
     }
-    if (defaultScreenName) {
+    if (window.history.length > 1 && document.referrer) {
+      window.history.back();
+      closeMenu();
+      return;
+    }
+    if (fallbackHref) {
+      window.location.assign(new URL(fallbackHref, document.baseURI).href);
+      closeMenu();
+      return;
+    }
+    if (usesHashRouting && defaultScreenName) {
       syncRoute(defaultScreenName, { replace: true });
       showScreen(defaultScreenName);
     }
@@ -303,6 +348,7 @@
   }
 
   window.addEventListener('popstate', () => {
+    if (!usesHashRouting) return;
     const name = getScreenNameFromLocation();
     if (!name) return;
     if (navStack[navStack.length - 1] !== name) navStack.push(name);
@@ -361,6 +407,23 @@
 
       const expanded = document.querySelectorAll(".chatbox__options[data-state='expanded'] .chip");
 
+      if (inner && savedClosedInnerRect) {
+        const targetHeight = inner.getBoundingClientRect().height;
+        openingShellAnimation?.cancel();
+        const animation = animateShellHeight(
+          inner,
+          savedClosedInnerRect.height,
+          targetHeight
+        );
+        openingShellAnimation = animation;
+        animation?.finished
+          .then(() => {
+            if (openingShellAnimation !== animation) return;
+            openingShellAnimation = null;
+            animation.cancel();
+          })
+          .catch(() => {});
+      }
       if (expandedOptions && startOptionsWidth !== null) {
         const innerRect = inner ? inner.getBoundingClientRect() : null;
         const innerStyle = inner ? getComputedStyle(inner) : null;
@@ -441,6 +504,9 @@
     const wrap  = document.querySelector('.chatbox-wrap');
     const cb    = document.querySelector('.chatbox');
     const inner = document.querySelector('.chatbox__inner');
+
+    openingShellAnimation?.cancel();
+    openingShellAnimation = null;
 
     // Snapshot every chip's open rect BEFORE any layout shift so the pin
     // captures the true open position (not a value already drifting due
@@ -543,18 +609,24 @@
       btn.setAttribute('aria-label', 'Open suggestions');
     }
 
-    // Kick off the CSS spring on chatbox geometry.
+    // Keep steady states intrinsic. Explicit heights exist only for this
+    // transition so the shell and its content interpolate as one component.
+    const shellAnimations = [];
     if (savedClosedWrapRect) {
       const closedBottom = window.innerHeight - savedClosedWrapRect.bottom;
-      wrap.style.height = savedClosedWrapRect.height + 'px';
       wrap.style.bottom = closedBottom + 'px';
       wrap.style.width = savedClosedWrapRect.width + 'px';
       wrap.style.maxWidth = savedClosedWrapRect.width + 'px';
     }
     cb.style.padding    = 'var(--space-3)';
-    inner.style.height  = closedInnerRect
-      ? closedInnerRect.height + 'px'
-      : 'var(--chatbox-inner-h-closed)';
+    if (innerOpenRect && closedInnerRect) {
+      const animation = animateShellHeight(
+        inner,
+        innerOpenRect.height,
+        closedInnerRect.height
+      );
+      if (animation) shellAnimations.push(animation);
+    }
 
     const parentDx = innerOpenRect && closedInnerRect ? closedInnerRect.left - innerOpenRect.left : 0;
     const parentDy = innerOpenRect && closedInnerRect ? closedInnerRect.top  - innerOpenRect.top  : 0;
@@ -637,12 +709,11 @@
       isClosingMenu = false;
       delete body.dataset.menuClosing;
 
-      wrap.style.height = '';
+      shellAnimations.forEach(animation => animation.cancel());
       wrap.style.bottom = '';
       wrap.style.width = '';
       wrap.style.maxWidth = '';
       cb.style.padding = '';
-      inner.style.height = '';
 
       animatedChips.forEach(big => {
         big.getAnimations().forEach(a => a.cancel());
@@ -725,8 +796,15 @@
   document.addEventListener('click', (e) => {
     const actionEl = e.target.closest('[data-action]');
     if (actionEl) {
+      e.preventDefault();
       switch (actionEl.dataset.action) {
-        case 'back':         goBack(); return;
+        case 'back':
+          goBack(
+            actionEl.dataset.fallbackHref
+              || actionEl.getAttribute('href')
+              || ''
+          );
+          return;
         case 'toggle-menu':  toggleMenu(); return;
         case 'close-menu':   closeMenu(); return;
         case 'toggle-dark':  toggleDark(); closeMenu(); return;
@@ -738,7 +816,10 @@
     const targetEl = e.target.closest('[data-target]');
     if (targetEl) {
       e.preventDefault();
-      navigate(targetEl.dataset.target);
+      navigate(
+        targetEl.dataset.target,
+        targetEl.dataset.href || targetEl.getAttribute('href') || ''
+      );
       return;
     }
 
@@ -841,6 +922,7 @@
   function createLeetText(el) {
     const timers = new Set();
     const accentTimers = new Map();
+    const pendingOperations = new Set();
     let isHiding = false;
     let hoveredIndices = new Set();
     let interactionTokenConsumer = null;
@@ -931,9 +1013,30 @@
       return id;
     }
 
+    function createOperation() {
+      let isSettled = false;
+      let resolvePromise;
+      const promise = new Promise(resolve => {
+        resolvePromise = resolve;
+      });
+      const settle = completed => {
+        if (isSettled) return;
+        isSettled = true;
+        pendingOperations.delete(cancel);
+        resolvePromise({ completed });
+      };
+      const cancel = () => settle(false);
+      pendingOperations.add(cancel);
+      return {
+        promise,
+        complete: () => settle(true)
+      };
+    }
+
     function clearTimers() {
       timers.forEach(id => clearTimeout(id));
       timers.clear();
+      [...pendingOperations].forEach(cancel => cancel());
     }
 
     function setTone(index, tone = 'default') {
@@ -989,6 +1092,7 @@
     function playIn({ growFromEmpty = false, timingScale = 1, correctionAfterWrite = false, deferCorrection = false, onType, onCorrect } = {}) {
       clearTimers();
       clearAccentTimers();
+      const operation = createOperation();
       isHiding = false;
       el.dataset.leetState = 'typing';
       if (suggestionRow) suggestionRow.dataset.suggestionState = 'appearing';
@@ -1006,6 +1110,12 @@
         ? lastTypeDelay
         : CORRECTION_DELAY * timingScale;
 
+      if (!spans.length) {
+        el.dataset.leetState = deferCorrection ? 'typed' : 'ready';
+        operation.complete();
+        return operation.promise;
+      }
+
       spans.forEach((span, index) => {
         const typeDelay = index * TYPE_STEP * timingScale;
         setTimer(() => {
@@ -1014,7 +1124,13 @@
           setTone(index, 'muted');
           span.style.opacity = '1';
           span.dataset.typed = 'true';
-          if (onType && span.dataset.char.trim()) onType();
+          if (onType && span.dataset.char.trim()) {
+            onType({ effect: api, index, characterCount: spans.length, span });
+          }
+          if (index === spans.length - 1) {
+            if (deferCorrection) el.dataset.leetState = 'typed';
+            operation.complete();
+          }
         }, typeDelay);
         if (!deferCorrection) {
           setTimer(() => {
@@ -1025,15 +1141,19 @@
                 ? () => { el.dataset.leetState = 'ready'; }
                 : undefined
             });
-            if (onCorrect && span.dataset.char.trim()) onCorrect();
+            if (onCorrect && span.dataset.char.trim()) {
+              onCorrect({ effect: api, index, characterCount: spans.length, span });
+            }
           }, correctionStart + index * CORRECTION_STEP * timingScale);
         }
       });
+      return operation.promise;
     }
 
     function correct({ timingScale = 1, duration, onCorrect } = {}) {
       clearTimers();
       clearAccentTimers({ resetTone: false });
+      const operation = createOperation();
       el.dataset.leetState = 'correcting';
       const targetDuration = Number.isFinite(duration) && duration >= 0
         ? duration
@@ -1041,18 +1161,29 @@
       const accentDuration = Math.min(ACCENT_DURATION, targetDuration);
       const correctionWindow = Math.max(0, targetDuration - accentDuration);
       const correctionStep = spans.length > 1 ? correctionWindow / (spans.length - 1) : 0;
+      if (!spans.length) {
+        el.dataset.leetState = 'ready';
+        operation.complete();
+        return operation.promise;
+      }
       spans.forEach((span, index) => {
         setTimer(() => {
           setChar(index, 'plain');
           pulseAccent(index, {
             duration: accentDuration,
             onComplete: index === spans.length - 1
-              ? () => { el.dataset.leetState = 'ready'; }
+              ? () => {
+                  el.dataset.leetState = 'ready';
+                  operation.complete();
+                }
               : undefined
           });
-          if (onCorrect && span.dataset.char.trim()) onCorrect();
+          if (onCorrect && span.dataset.char.trim()) {
+            onCorrect({ effect: api, index, characterCount: spans.length, span });
+          }
         }, index * correctionStep);
       });
+      return operation.promise;
     }
 
     function getCorrectionDuration(timingScale = 1) {
@@ -1146,6 +1277,15 @@
 
     function getCharacterCount() {
       return spans.length;
+    }
+
+    function getLastCharacterIndexBefore(cutoffY) {
+      let lastIndex = -1;
+      spans.forEach((span, index) => {
+        const rect = span.getBoundingClientRect();
+        if (rect.top < cutoffY) lastIndex = index;
+      });
+      return lastIndex;
     }
 
     function hoverAround(clientX, clientY) {
@@ -1282,7 +1422,24 @@
       el.addEventListener('pointerleave', clearHover);
     }
 
-    return { el, playIn, correct, playLinesAsLeet, replayAllLeet, prepareHidden, hide, clearHover, setInteractionTokenConsumer, getPlayInDuration, getLeetWriteDuration, getCorrectionDuration, getCharacterCount, getLinesPlayDuration };
+    const api = {
+      el,
+      playIn,
+      correct,
+      playLinesAsLeet,
+      replayAllLeet,
+      prepareHidden,
+      hide,
+      clearHover,
+      setInteractionTokenConsumer,
+      getPlayInDuration,
+      getLeetWriteDuration,
+      getCorrectionDuration,
+      getCharacterCount,
+      getLastCharacterIndexBefore,
+      getLinesPlayDuration
+    };
+    return api;
   }
 
   const leetTexts = [...document.querySelectorAll('[data-leet-text]')].map(createLeetText);
@@ -1380,10 +1537,13 @@
     return Math.min(maximum, Math.max(minimum, value));
   }
 
-  function buildPageLeetTimingPlan(screenName, activeEffects) {
-    const screen = screensByName.get(screenName);
-    const requestedTotalDuration = Number(screen?.dataset.leetDuration);
-    const requestedWriteDuration = Number(screen?.dataset.leetWriteDuration);
+  function buildPageLeetTimingPlan(screenName, activeEffects, {
+    timingSource = screensByName.get(screenName),
+    minimumTotalDuration = pageLeetTiming.minimumTotalDuration,
+    maximumTotalDuration = pageLeetTiming.maximumTotalDuration
+  } = {}) {
+    const requestedTotalDuration = Number(timingSource?.dataset.leetDuration);
+    const requestedWriteDuration = Number(timingSource?.dataset.leetWriteDuration);
     const items = activeEffects.map(effect => {
       const fontSize = parseFloat(getComputedStyle(effect.el).fontSize)
         || pageLeetTiming.fontReferenceSize;
@@ -1414,11 +1574,9 @@
         naturalCorrectionDuration
       };
     });
-    const totalWriteGap = pageLeetTiming.writeSequenceGap
-      * Math.max(0, items.length - 1);
     const naturalWriteDuration = items.reduce(
       (total, item) => total + item.naturalWriteDuration,
-      totalWriteGap
+      0
     );
     const naturalCorrectionDuration = items.reduce(
       (total, item) => total + item.naturalCorrectionDuration,
@@ -1429,8 +1587,8 @@
       ? requestedTotalDuration
       : clampPageTiming(
         naturalTotalDuration,
-        pageLeetTiming.minimumTotalDuration,
-        pageLeetTiming.maximumTotalDuration
+        minimumTotalDuration,
+        maximumTotalDuration
       );
     const automaticScale = naturalTotalDuration
       ? totalDuration / naturalTotalDuration
@@ -1439,55 +1597,52 @@
     const writeDuration = Number.isFinite(requestedWriteDuration) && requestedWriteDuration >= 0
       ? Math.min(requestedWriteDuration, totalDuration)
       : automaticWriteDuration;
-    const availableWriteDuration = Math.max(0, writeDuration - totalWriteGap);
-    const naturalCharacterWriteDuration = Math.max(
-      0,
-      naturalWriteDuration - totalWriteGap
-    );
-    const writeScale = naturalCharacterWriteDuration
-      ? availableWriteDuration / naturalCharacterWriteDuration
+    const writeScale = naturalWriteDuration
+      ? writeDuration / naturalWriteDuration
       : 1;
     const correctionDuration = Math.max(0, totalDuration - writeDuration);
     const correctionScale = naturalCorrectionDuration
       ? correctionDuration / naturalCorrectionDuration
       : 1;
-    let writeStart = 0;
-
-    items.forEach((item, index) => {
-      item.writeStart = writeStart;
-      item.writeDuration = item.naturalWriteDuration * writeScale;
-      writeStart += item.writeDuration;
-      if (index < items.length - 1) {
-        writeStart += pageLeetTiming.writeSequenceGap;
-      }
-    });
-
-    let correctionStart = writeStart;
     items.forEach(item => {
-      item.correctionStart = correctionStart;
-      item.correctionDuration = item.naturalCorrectionDuration * correctionScale;
-      correctionStart += item.correctionDuration;
+      item.writeDuration = item.naturalWriteDuration * writeScale;
     });
+    items.forEach(item => {
+      item.correctionDuration = item.naturalCorrectionDuration * correctionScale;
+    });
+    const plannedWriteDuration = items.reduce(
+      (total, item) => total + item.writeDuration,
+      0
+    );
+    const plannedCorrectionDuration = items.reduce(
+      (total, item) => total + item.correctionDuration,
+      0
+    );
 
     return {
       screenName,
       characterCount: items.reduce((total, item) => total + item.characterCount, 0),
       naturalTotalDuration,
-      totalDuration: correctionStart,
-      writeDuration: writeStart,
-      correctionDuration: correctionStart - writeStart,
+      totalDuration: plannedWriteDuration + plannedCorrectionDuration,
+      writeDuration: plannedWriteDuration,
+      correctionDuration: plannedCorrectionDuration,
       items
     };
   }
 
-  function playScreenLeetTexts(screenName) {
-    const activeEffects = [];
-    const activeScreen = screensByName.get(screenName);
-    const screenMessages = [...(activeScreen?.querySelectorAll('[data-message]') || [])];
-    activeScreen?.querySelectorAll('.suggestion').forEach(suggestion => {
+  function getEffectOwners(effects, selector) {
+    return [...new Set(
+      effects
+        .map(effect => effect.el.closest(selector))
+        .filter(Boolean)
+    )];
+  }
+
+  function prepareLeetSequenceUi(effects) {
+    getEffectOwners(effects, '.suggestion').forEach(suggestion => {
       delete suggestion.dataset.suggestionIconCorrected;
     });
-    screenMessages.forEach(message => {
+    getEffectOwners(effects, '[data-message]').forEach(message => {
       const messageActions = message.querySelector('[data-message-actions]');
       if (!messageActions) return;
       messageActions.dataset.messageActionsState = 'hidden';
@@ -1496,6 +1651,329 @@
         delete action.dataset.messageActionCorrected;
       });
     });
+  }
+
+  function createDeferred() {
+    let isSettled = false;
+    let resolvePromise;
+    const promise = new Promise(resolve => {
+      resolvePromise = resolve;
+    });
+    return {
+      promise,
+      resolve(value) {
+        if (isSettled) return;
+        isSettled = true;
+        resolvePromise(value);
+      }
+    };
+  }
+
+  function isPageSequenceActive(screenName, sequenceVersion) {
+    return body.dataset.screen === screenName
+      && pageSequenceVersion === sequenceVersion;
+  }
+
+  function getContentGenerationBoundaryY() {
+    const boundaryRect = viewportBoundaryElement?.getBoundingClientRect();
+    if (
+      boundaryRect
+      && boundaryRect.top > 0
+      && boundaryRect.top < window.innerHeight
+    ) {
+      return boundaryRect.top;
+    }
+    return Math.max(0, window.innerHeight - pageLeetTiming.foldBottomInset);
+  }
+
+  function getViewportRevealRootMargin() {
+    const bottomInset = Math.max(
+      0,
+      window.innerHeight - getContentGenerationBoundaryY()
+    );
+    return `0px 0px -${bottomInset}px 0px`;
+  }
+
+  function getSequenceFoldTarget(timingPlan) {
+    const cutoffY = getContentGenerationBoundaryY();
+    let target = null;
+    timingPlan.items.forEach(item => {
+      const index = item.effect.getLastCharacterIndexBefore(cutoffY);
+      if (index >= 0) target = { effect: item.effect, index };
+    });
+    if (!target) {
+      const lastItem = timingPlan.items.at(-1);
+      if (lastItem) {
+        target = {
+          effect: lastItem.effect,
+          index: Math.max(0, lastItem.effect.getCharacterCount() - 1)
+        };
+      }
+    }
+    return { ...target, cutoffY };
+  }
+
+  function getMessageActionContext(effect) {
+    const message = effect.el.closest('[data-message]');
+    const messageBody = message?.querySelector('[data-message-body]');
+    const messageActions = message?.querySelector('[data-message-actions]');
+    if (!messageBody || !messageActions) return null;
+    const finalBodyEffect = contentLeetTexts
+      .filter(candidate => (
+        candidate.el === messageBody || messageBody.contains(candidate.el)
+      ))
+      .at(-1);
+    if (effect !== finalBodyEffect) return null;
+    return {
+      messageActions,
+      actions: [...messageActions.querySelectorAll('.message-action')]
+    };
+  }
+
+  function revealMessageActions(effect) {
+    const context = getMessageActionContext(effect);
+    if (context) context.messageActions.dataset.messageActionsState = 'visible';
+  }
+
+  function syncMessageActionCorrection(effect, index, characterCount) {
+    const context = getMessageActionContext(effect);
+    if (!context || !context.actions.length) return;
+    const progress = (index + 1) / Math.max(1, characterCount);
+    context.actions.forEach((action, actionIndex) => {
+      const threshold = (actionIndex + 1) / context.actions.length;
+      if (progress >= threshold) action.dataset.messageActionCorrected = 'true';
+    });
+  }
+
+  function completeMessageActionCorrection(effect) {
+    const context = getMessageActionContext(effect);
+    if (context) context.messageActions.dataset.messageActionsCorrected = 'true';
+  }
+
+  function runLeetTimingPlan(screenName, timingPlan, sequenceVersion) {
+    const foldTarget = getSequenceFoldTarget(timingPlan);
+    const foldReached = createDeferred();
+    const writeStates = new Map(
+      timingPlan.items.map(item => [item.effect, createDeferred()])
+    );
+    const settlePendingWrites = completed => {
+      writeStates.forEach(state => state.resolve(completed));
+    };
+
+    const writing = (async () => {
+      let completed = true;
+      for (const item of timingPlan.items) {
+        if (!isPageSequenceActive(screenName, sequenceVersion)) {
+          completed = false;
+          break;
+        }
+        const naturalDuration = item.effect.getLeetWriteDuration();
+        const timingScale = naturalDuration
+          ? item.writeDuration / naturalDuration
+          : 1;
+        const result = await item.effect.playIn({
+          timingScale,
+          deferCorrection: true,
+          onType: detail => {
+            consumeToken();
+            if (
+              detail.effect === foldTarget.effect
+              && detail.index === foldTarget.index
+            ) {
+              foldReached.resolve(true);
+            }
+          }
+        });
+        const itemCompleted = result.completed
+          && isPageSequenceActive(screenName, sequenceVersion);
+        writeStates.get(item.effect)?.resolve(itemCompleted);
+        if (!itemCompleted) {
+          completed = false;
+          break;
+        }
+        revealMessageActions(item.effect);
+      }
+      settlePendingWrites(false);
+      foldReached.resolve(completed);
+      return completed;
+    })();
+
+    const correcting = (async () => {
+      const canStart = await foldReached.promise;
+      if (!canStart || !isPageSequenceActive(screenName, sequenceVersion)) {
+        return false;
+      }
+      for (const item of timingPlan.items) {
+        const wasWritten = await writeStates.get(item.effect).promise;
+        if (!wasWritten || !isPageSequenceActive(screenName, sequenceVersion)) {
+          return false;
+        }
+        const suggestion = item.effect.el.closest('.suggestion');
+        if (suggestion) suggestion.dataset.suggestionIconCorrected = 'true';
+        const result = await item.effect.correct({
+          duration: item.correctionDuration,
+          onCorrect: detail => {
+            consumeToken();
+            syncMessageActionCorrection(
+              item.effect,
+              detail.index,
+              detail.characterCount
+            );
+          }
+        });
+        if (!result.completed || !isPageSequenceActive(screenName, sequenceVersion)) {
+          return false;
+        }
+        completeMessageActionCorrection(item.effect);
+      }
+      return true;
+    })();
+
+    return {
+      timingPlan,
+      foldTarget,
+      writing,
+      correcting,
+      completed: Promise.all([writing, correcting])
+        .then(results => results.every(Boolean))
+    };
+  }
+
+  function playLeetSequence(screenName, activeEffects, {
+    scope = screensByName.get(screenName),
+    timingSource = scope,
+    minimumTotalDuration = pageLeetTiming.minimumTotalDuration,
+    maximumTotalDuration = pageLeetTiming.maximumTotalDuration
+  } = {}) {
+    if (!scope || !activeEffects.length) return null;
+    prepareLeetSequenceUi(activeEffects);
+    const timingPlan = buildPageLeetTimingPlan(screenName, activeEffects, {
+      timingSource,
+      minimumTotalDuration,
+      maximumTotalDuration
+    });
+    return runLeetTimingPlan(screenName, timingPlan, pageSequenceVersion);
+  }
+
+  function getViewportRevealEffects(group) {
+    return contentLeetTexts.filter(
+      effect => (
+        effect.el.closest('[data-reveal-on-scroll]') === group
+        && !viewportRevealInitialEffects.has(effect)
+      )
+    );
+  }
+
+  function compareDocumentOrder(first, second) {
+    if (first === second) return 0;
+    return first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING
+      ? -1
+      : 1;
+  }
+
+  function releaseViewportRevealQueue(screenName) {
+    if (viewportRevealScreenName !== screenName
+      || body.dataset.screen !== screenName) return;
+    viewportRevealIsBlocked = false;
+    processViewportRevealQueue(screenName);
+  }
+
+  function processViewportRevealQueue(screenName) {
+    if (viewportRevealIsBlocked || viewportRevealIsPlaying
+      || viewportRevealScreenName !== screenName
+      || body.dataset.screen !== screenName || !viewportRevealQueue.length) return;
+    viewportRevealIsPlaying = true;
+    const activeScreen = screensByName.get(screenName);
+    const groups = viewportRevealQueue
+      .splice(0)
+      .sort(compareDocumentOrder);
+    groups.forEach(group => {
+      group.dataset.revealState = 'revealing';
+    });
+    const effects = groups.flatMap(getViewportRevealEffects);
+    const sequence = playLeetSequence(screenName, effects, {
+      scope: activeScreen,
+      timingSource: groups.length === 1 ? groups[0] : activeScreen,
+      minimumTotalDuration: viewportRevealTiming.minimumTotalDuration,
+      maximumTotalDuration: viewportRevealTiming.maximumTotalDuration
+    });
+
+    const completeBatch = () => {
+      if (body.dataset.screen !== screenName) return;
+      groups.forEach(group => {
+        group.dataset.revealState = 'revealed';
+      });
+      viewportRevealIsPlaying = false;
+      processViewportRevealQueue(screenName);
+    };
+
+    if (!sequence) {
+      completeBatch();
+      return;
+    }
+    sequence.completed.then(completed => {
+      if (completed) completeBatch();
+    });
+  }
+
+  function enqueueViewportRevealGroups(groups, screenName) {
+    groups
+      .sort(compareDocumentOrder)
+      .forEach(group => {
+        if (group.dataset.revealState !== 'pending') return;
+        group.dataset.revealState = 'queued';
+        viewportRevealObserver?.unobserve(group);
+        viewportRevealQueue.push(group);
+      });
+    viewportRevealQueue.sort(compareDocumentOrder);
+    processViewportRevealQueue(screenName);
+  }
+
+  function setupViewportReveals(screenName) {
+    viewportRevealObserver?.disconnect();
+    viewportRevealObserver = null;
+    viewportRevealQueue = [];
+    viewportRevealIsPlaying = false;
+    viewportRevealScreenName = screenName;
+    viewportRevealInitialEffects = new Set();
+    const activeScreen = screensByName.get(screenName);
+    const groups = activeScreen
+      ? [...activeScreen.querySelectorAll('[data-reveal-on-scroll]')]
+      : [];
+    groups.forEach(group => {
+      group.dataset.revealState = 'pending';
+      const groupEffects = getViewportRevealEffects(group);
+      prepareLeetSequenceUi(groupEffects);
+      groupEffects.forEach(effect => effect.prepareHidden());
+    });
+    if (!groups.length) return new Set();
+
+    if (!('IntersectionObserver' in window)) {
+      enqueueViewportRevealGroups(groups, screenName);
+      return new Set(groups);
+    }
+
+    viewportRevealObserver = new IntersectionObserver(entries => {
+      const visibleGroups = entries
+        .filter(entry => entry.isIntersecting)
+        .map(entry => entry.target);
+      enqueueViewportRevealGroups(visibleGroups, screenName);
+    }, {
+      threshold: viewportRevealTiming.threshold,
+      rootMargin: getViewportRevealRootMargin()
+    });
+    groups.forEach(group => viewportRevealObserver.observe(group));
+    return new Set(groups);
+  }
+
+  function playScreenLeetTexts(screenName) {
+    invalidatePageSequences();
+    const activeEffects = [];
+    const activeScreen = screensByName.get(screenName);
+    const sequenceVersion = pageSequenceVersion;
+    viewportRevealIsBlocked = true;
+    const viewportGroups = setupViewportReveals(screenName);
+    const foldY = getContentGenerationBoundaryY();
 
     contentLeetTexts.forEach(effect => {
       const screen = effect.el.closest('.screen');
@@ -1503,83 +1981,46 @@
         effect.prepareHidden();
         return;
       }
+      const viewportGroup = effect.el.closest('[data-reveal-on-scroll]');
+      if (viewportGroup && viewportGroups.has(viewportGroup)) {
+        const isInitiallyAboveFold = effect.getLastCharacterIndexBefore(foldY) >= 0;
+        if (!isInitiallyAboveFold) {
+          effect.prepareHidden();
+          return;
+        }
+        viewportRevealInitialEffects.add(effect);
+      }
+      effect.prepareHidden();
       activeEffects.push(effect);
     });
 
-    if (!activeEffects.length) return;
+    if (!activeEffects.length) {
+      releaseViewportRevealQueue(screenName);
+      return null;
+    }
 
-    const timingPlan = buildPageLeetTimingPlan(screenName, activeEffects);
-    pageLeetTimingPlans.set(screenName, timingPlan);
-
-    timingPlan.items.forEach(item => {
-      const suggestion = item.effect.el.closest('.suggestion');
-      if (!suggestion) return;
-      setPageTimer(() => {
-        if (body.dataset.screen !== screenName) return;
-        suggestion.dataset.suggestionIconCorrected = 'true';
-      }, item.correctionStart);
+    const sequence = playLeetSequence(screenName, activeEffects, {
+      scope: activeScreen,
+      timingSource: activeScreen
     });
-
-    screenMessages.forEach(message => {
-      const messageBody = message.querySelector('[data-message-body]');
-      const messageActions = message.querySelector('[data-message-actions]');
-      if (!messageActions) return;
-      const messageItem = timingPlan.items.find(item => item.effect.el === messageBody);
-      const revealStart = messageItem
-        ? messageItem.writeStart + messageItem.writeDuration
-        : 0;
-      setPageTimer(() => {
-        if (body.dataset.screen !== screenName) return;
-        messageActions.dataset.messageActionsState = 'visible';
-      }, revealStart);
-
-      if (messageItem) {
-        const actions = [...messageActions.querySelectorAll('.message-action')];
-        const correctionDuration = messageItem.correctionDuration;
-        const correctionStep = actions.length > 1
-          ? correctionDuration / actions.length
-          : 0;
-        actions.forEach((action, index) => {
-          setPageTimer(() => {
-            if (body.dataset.screen !== screenName) return;
-            action.dataset.messageActionCorrected = 'true';
-          }, messageItem.correctionStart + index * correctionStep);
-        });
-        setPageTimer(() => {
-          if (body.dataset.screen !== screenName) return;
-          messageActions.dataset.messageActionsCorrected = 'true';
-        }, messageItem.correctionStart + correctionDuration);
+    if (!sequence) {
+      releaseViewportRevealQueue(screenName);
+      return null;
+    }
+    pageLeetTimingPlans.set(screenName, sequence.timingPlan);
+    sequence.writing.then(completed => {
+      if (
+        completed
+        && isPageSequenceActive(screenName, sequenceVersion)
+      ) {
+        releaseViewportRevealQueue(screenName);
       }
     });
-
-    timingPlan.items.forEach(item => {
-      const naturalDuration = item.effect.getLeetWriteDuration();
-      const timingScale = naturalDuration
-        ? item.writeDuration / naturalDuration
-        : 1;
-      setPageTimer(() => {
-        if (body.dataset.screen !== screenName) return;
-        item.effect.playIn({
-          timingScale,
-          deferCorrection: true,
-          onType: consumeToken
-        });
-      }, item.writeStart);
-    });
-
-    timingPlan.items.forEach(item => {
-      setPageTimer(() => {
-        if (body.dataset.screen !== screenName) return;
-        item.effect.correct({
-          duration: item.correctionDuration,
-          onCorrect: consumeToken
-        });
-      }, item.correctionStart);
-    });
+    return sequence;
   }
 
-  function consumeToken() {
-    tokenCounter?.spend();
+  function consumeToken(amount = 1) {
+    tokenCounter?.spend(Number.isFinite(amount) ? amount : 1);
   }
 
   function createTokenCounter(el) {
@@ -1755,6 +2196,7 @@
   };
   globalThis.portfolioExperience = {
     tokenCounter,
-    shellIntro
+    shellIntro,
+    spendTokens: consumeToken
   };
 })();

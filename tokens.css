@@ -228,9 +228,28 @@
   --project-card-title-inline: 18px;
   --project-card-title-bottom: 14px;
   --project-card-hover-offset: 2px;
-  --question-chip-padding-block: 13px;
+  --project-card-tag-size: 12px;
+  --project-card-tag-line: var(--lh-button-sm);
+  --project-card-tag-height: var(--space-4);
+  --project-card-tag-padding-inline: var(--space-1);
+  --project-card-tag-gap: 0;
+  --project-card-tag-dismiss-offset: -4px;
+  --project-card-tag-dismiss-scale: 0.96;
   --chip-inline-gap: 3px;
   --menu-label-start-offset: 6px;
+  --back-button-size: var(--size-control);
+  --back-button-icon-size: var(--size-icon);
+  --back-button-icon-stroke: var(--stroke-thin);
+  --back-button-radius: var(--radius-lg);
+  --back-button-color: var(--fg-default);
+  --back-button-background: var(--glass-shell-background);
+  --back-button-border: var(--glass-shell-border);
+  --back-button-filter: var(--glass-shell-filter);
+  --back-button-shadow: var(--glass-shell-inner-shadow), var(--glass-shell-border-shadow);
+  --back-button-background-hover: var(--bg-control-hover-soft);
+  --back-button-background-pressed: var(--bg-control-pressed);
+  --back-button-transition-duration: var(--duration-fast);
+  --back-button-transition-easing: var(--easing-default);
 
   /* =============================================================
      5. RADIUS
@@ -243,8 +262,8 @@
   --radius-chatbox-open: 40px;
   --radius-chip:      40px;  /* chips, question-pills */
   --radius-pill:      72px;  /* menu toggle button */
-  --chip-bg-content-gap: 7px;
-  --chip-bg-padding-block: var(--space-2);
+  --chip-bg-content-gap: 8px;
+  --chip-bg-padding-block: var(--space-3);
 
   /* =============================================================
      6. SHADOW
@@ -265,6 +284,11 @@
   --blur-glass: 12px;
   --chatbox-glass-blur: 6px;
   --chatbox-glass-saturation: 180%;
+  --glass-shell-background: var(--bg-chatbox-glass);
+  --glass-shell-filter: blur(var(--chatbox-glass-blur)) saturate(var(--chatbox-glass-saturation));
+  --glass-shell-border: var(--stroke-thin) solid var(--border-glass);
+  --glass-shell-border-shadow: inset 0 0 0 var(--stroke-thin) var(--border-glass-subtle);
+  --glass-shell-inner-shadow: var(--shadow-chatbox-inner);
 
   --gradient-image-overlay: linear-gradient(
     to bottom,
@@ -294,9 +318,9 @@
 
   /* Desktop grid */
   --desktop-breakpoint: 768px;
-  --desktop-body-max:    1440px;
-  --desktop-side-margin: 80px;
-  --desktop-grid-max:   1280px;
+  --desktop-body-max:    1336px;
+  --desktop-side-margin: 20px;
+  --desktop-grid-max: calc(var(--desktop-body-max) - (2 * var(--desktop-side-margin)));
   --desktop-grid-columns: 16;
   --desktop-grid-gutter: 24px;
   --desktop-title-size:  72px;
@@ -344,6 +368,7 @@
   --page-logo-title-gap:  var(--space-6);
   --page-title-content-gap: var(--space-6);
   --page-content-gap:     var(--space-10);
+  --message-body-gap: var(--space-3);
   --message-copy-actions-gap: var(--space-4);
   --message-actions-height: var(--space-6);
   --message-action-size: var(--space-6);
@@ -359,6 +384,7 @@
   --chatbox-options-fade-overlap: var(--stroke-thin);
   --chatbox-menu-button-open-width: 76px;
   --chatbox-menu-label-max-width: var(--space-8);
+  --chatbox-menu-button-stack-gap: var(--space-2);
 
   /* Chatbox geometry (used by .app padding and .screen min-height) */
   --chatbox-floor:        180px;  /* vertical space reserved at the bottom of every screen */
@@ -388,7 +414,7 @@
   --duration-menu-icon: 520ms;
   --duration-menu-label-reveal: 320ms;
   --delay-menu-label-reveal: 220ms;
-  --duration-chip-layout-shift: 220ms;
+  --duration-chip-layout-shift: 280ms;
   --duration-edge-indicator: 180ms;
   --duration-terminal-cursor: 500ms;
   --duration-viewport-opacity: 1ms;
@@ -400,6 +426,30 @@
   --suggestion-icon-cascade-step: 120ms;
   --suggestion-icon-start-scale: 0.45;
   --shell-intro-duration: 900ms;
+
+  /* Project image depixelation */
+  --project-image-reveal-duration-min: 2200ms;
+  --project-image-reveal-duration-max: 3000ms;
+  --project-image-reveal-stagger: 80ms;
+  --project-image-reveal-start-block: 32;
+  --project-image-reveal-milestones: 5;
+  --project-image-reveal-pace-segments: 9;
+  --project-image-reveal-pace-jitter: 0.08;
+  --project-image-reveal-regression-min: 0.05;
+  --project-image-reveal-regression-max: 0.12;
+  --project-card-tag-complete-hold: 120ms;
+  --project-card-tag-done-hold: 400ms;
+  --project-card-tag-dismiss-duration: var(--duration-base);
+  --project-image-reveal-fade-start: 0.82;
+  --project-image-reveal-threshold: 0.15;
+  --project-image-reveal-root-margin: 0px 0px -10% 0px;
+  --project-image-reveal-max-dpr: 2;
+  --project-image-reveal-token-cost: 1;
+
+  /* Reusable below-the-fold content generation */
+  --viewport-reveal-duration-min: 600ms;
+  --viewport-reveal-duration-max: 1800ms;
+  --viewport-reveal-threshold: 0.15;
 
   /* Text engine — shared by every page and component */
   --leet-type-step: 18ms;
@@ -430,7 +480,7 @@
   --page-intro-font-reference: 16;
   --page-intro-font-factor-min: 0.85;
   --page-intro-font-factor-max: 2.2;
-  --page-intro-sequence-gap: 1ms;
+  --page-intro-fold-bottom-inset: var(--chatbox-floor);
   --page-first-load-delay: 400ms;
 
   /* Persistent token counter */

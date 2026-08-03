@@ -4,16 +4,38 @@ The site is a small client-side application built around four contracts:
 page metadata, reusable components, design tokens, and shared experience
 controllers.
 
-## Add A Page
+## Add A Route
+
+Each HTML document keeps the same small landmark structure:
+
+```html
+<header class="site-header">...</header>
+<main id="main-content" class="app">...</main>
+<nav class="chatbox-wrap" aria-label="Portfolio navigation">...</nav>
+```
+
+Do not add empty landmarks. A footer belongs in the document only when it has
+real footer content. Conversation headers and project articles stay inside
+their owning page section.
+
+Use a hash screen for a view that belongs to the current document:
 
 1. Add one `.screen.page` section inside `.app`.
 2. Give it a unique `data-screen-name`.
 3. Choose `data-page-layout="hero"` or `data-page-layout="conversation"`.
-4. Add `data-leet-text` only to text that should use the shared text engine.
-5. Link to it with `data-target="<screen-name>"`.
+4. Link to it with `data-target="<screen-name>"`.
 
-Mark exactly one page with `data-default-screen`. The router uses the first
-registered page only as a fallback when that marker is absent.
+Use a standalone document for a primary portfolio page:
+
+1. Create `<route>/index.html`.
+2. Set `data-routing="document"` on its `body`.
+3. Include one `.screen.page[data-default-screen]`.
+4. Load the shared `tokens.css`, `styles.css`, and `script.js`.
+5. Link across documents with both `data-target` and `data-href`.
+
+The home document uses `data-routing="hash"` so Home and About retain their
+lightweight in-document history. Work uses `/work/` and is independently
+addressable, refreshable, and indexable.
 
 Example:
 
@@ -32,9 +54,13 @@ Example:
 </section>
 ```
 
-The router discovers the page automatically, updates `#contact`, manages
-browser history, resets scroll position, updates active chatbox chips, and
-starts the page text sequence.
+Mark exactly one page per document with `data-default-screen`. The router uses
+the first registered page only as a fallback when that marker is absent.
+
+The router discovers local screens automatically. If a `data-target` is not
+present in the current document, it follows `data-href` instead. Both routing
+modes reset scroll position, update active chatbox chips, and start the shared
+page text sequence.
 
 Menu motion and page motion have separate timer registries. Closing the global
 chatbox therefore never interrupts the intro of the page it just opened.
@@ -57,13 +83,96 @@ Optional page overrides:
 Use `data-page-intro="shell"` only for a page that must wait for the first-load
 shell and token-counter intro.
 
+## Viewport Reveal
+
+Add `data-reveal-on-scroll` to any component or content group that should
+generate only when it enters the viewport:
+
+```html
+<article data-reveal-on-scroll>
+  <h2 data-leet-text>Project title</h2>
+  <img data-pixel-reveal ... />
+</article>
+```
+
+The initial page planner excludes text inside these groups only when all of its
+reserved characters are below the generation fold. A deferred text already
+visible above the fold joins the initial cohort automatically, without losing
+its component ownership. Every active page owns one shared generation queue.
+Its `IntersectionObserver` batches groups that enter together into one
+DOM-order sequence; groups reached during an active batch wait their turn.
+Writing and correction expose completion promises, so component dependencies
+follow actual character events rather than parallel `setTimeout` estimates.
+The top edge of `.chatbox-wrap` is the shared lower boundary for initial text
+classification, the last visible Leet character, and the viewport observer.
+`--page-intro-fold-bottom-inset` is used only as a geometry fallback when the
+chatbox cannot be measured. The queue is released only when the initial writing
+promise resolves. Initial correction may therefore continue while the first
+deferred group writes, keeping the page ordered without introducing a
+correction-length pause.
+The same hierarchy therefore drives writing and correction across components,
+not only inside one component. Font size and character count still calculate
+each effect's speed automatically; calculated durations control pace, never
+cross-component synchronization. Text generation consumes the same persistent
+tokens as the page intro. Optional `data-leet-duration` and
+`data-leet-write-duration` overrides remain available for exceptional
+component pacing, not ordinary page sequencing.
+
+Project image generation also consumes tokens as new percentage peaks are
+reached. A randomized regression never charges twice, and failed or
+reduced-motion image paths do not charge generation tokens.
+
 ## Components
+
+### Back Button
+
+Use the same component class on a semantic button for in-document history or
+on an anchor when a real fallback URL is available:
+
+```html
+<a
+  class="back-button"
+  href="../index.html#home"
+  data-action="back"
+  data-fallback-href="../index.html#home"
+  aria-label="Go back"
+>
+  <svg class="back-button__icon" aria-hidden="true">
+    <use href="#i-chevron-left"></use>
+  </svg>
+</a>
+```
+
+The shared click controller follows the browser's previous referring page.
+`data-fallback-href` is used when no referring page exists, avoiding a return
+to the browser's initial blank document. Component
+geometry, color, icon stroke, radius, and interaction motion come exclusively
+from the `--back-button-*` tokens. Its translucent background, blur, border,
+and inset highlights alias the same `--glass-shell-*` tokens as the chatbox.
+
+### Chat Bubble
+
+`chat-bubble` is the shared visual component for a page-level user prompt and
+the large interactive suggestions inside the opened chatbox. Compose it with
+`question-chip` plus `chat-bubble--selected` for a semantic heading, or with
+`chip chip--bg` for an interactive suggestion. Prefix, keyword, suffix, Leet,
+hover, and routing behavior remain state-specific layers on the same shell.
+The shell wraps only between complete `.leet-word` elements, preserving words
+and the shared multiline growth behavior in both contexts. Both contexts use
+the same `.chip__copy`, `.chip__muted`, and `.chip__keyword` anatomy so their
+internal spacing cannot drift.
 
 ### Message
 
 ```html
 <div class="message" data-message>
-  <p class="lede" data-message-body data-leet-text>...</p>
+  <div class="message__body" data-message-body>
+    <p class="lede" data-leet-text>...</p>
+    <div class="message__continuation" data-reveal-on-scroll>
+      <p class="lede" data-leet-text>...</p>
+      <p class="lede" data-leet-text>...</p>
+    </div>
+  </div>
   <div class="message-actions" data-message-actions>
     ...
     <time data-message-generated-at></time>
@@ -72,7 +181,11 @@ shell and token-counter intro.
 ```
 
 Share, rating, timestamp, reveal, correction color, and token consumption are
-scoped to the nearest message component.
+scoped to the nearest message component. The action footer waits for the final
+text inside `[data-message-body]`, including text revealed later on scroll.
+Put one `data-reveal-on-scroll` marker on a parent when its descendant texts
+form one content unit. Separate markers still join the page-level queue and
+keep their relative DOM order.
 
 ### Suggestions
 
@@ -86,6 +199,28 @@ Every collapsed and expanded chip pair shares the same `data-target` or
 both component states; page-specific values are not required. A shared
 `ResizeObserver` also animates vertical chip displacement when progressive
 text causes an expanded chip to wrap onto multiple lines.
+
+### Project Images
+
+Add `data-pixel-reveal` to a project image and load
+`project-image-reveal.js` with `defer` on that page. The controller overlays
+a temporary Canvas 2D layer, starts when the image enters the viewport, and
+removes the canvas after the native image is revealed. Every participating
+project card can expose the shared progress chip with `data-pixel-progress`
+and a child marked `data-pixel-progress-value`.
+
+Timing, cascade, pixel size, viewport threshold, and device-pixel-ratio limits
+come from shared motion tokens. The chip counts continuously from 0 to 100,
+while the canvas advances through one resolution level at each 20% milestone.
+Each reveal lasts between 2.2 and 3 seconds and receives a randomized pace profile.
+The counter can briefly regress, while image resolution keeps its highest milestone.
+At completion, the ambient Leet `DONE!` sequence replaces the counter and dismisses the chip.
+Each newly reached percentage point consumes the token cost defined in
+`--project-image-reveal-token-cost`.
+Reduced-motion users receive the native image and a completed progress value
+immediately. Dynamic pages can call `portfolioProjectImages.init(root)`,
+while `portfolioProjectImages.replay(root)` is available for deliberate
+replays.
 
 ### Shell
 
