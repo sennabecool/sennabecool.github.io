@@ -22,6 +22,8 @@ img { display: block; max-width: 100%; }
   --subpage-content-top: 80px;
   --subpage-content-item-gap: var(--space-3);
   --subpage-scroll-bottom: calc(var(--space-3) + 128px + var(--space-10));
+  --project-card-top-veil-height: 160px;
+  --project-card-top-veil-edge-opacity: 0.5;
 }
 
 /* =========================================================
@@ -54,7 +56,7 @@ body {
 
 .app {
   width: 100%;
-  max-width: var(--frame-max);
+  max-width: 100%;
   min-height: 100svh;
   padding: var(--space-8) var(--gutter) calc(180px + var(--space-10) + var(--safe-bottom));
   position: relative;
@@ -88,6 +90,14 @@ body[data-page-layout="hero"] .app {
 .screen:not([data-page-layout="hero"]) {
   padding-top: 0;
   gap: var(--space-6);
+}
+
+body[data-screen="work"] .screen[data-page-layout="conversation"] {
+  gap: calc(var(--space-6) * 2);
+}
+
+body[data-screen="work"] .message__body > .project-grid {
+  margin-top: calc((var(--space-6) * 2) - var(--subpage-content-item-gap));
 }
 
 body:not([data-page-layout="hero"]) .app {
@@ -607,20 +617,38 @@ body:not([data-page-layout="hero"]) .app {
    Project grid (2-col masonry-ish)
    ========================================================= */
 .project-grid {
+  /* The medium row tracks the height of one half-width 171:148 card. */
+  --project-card-sm-height: calc(43.2748538cqw - 5.192982px);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+  container-type: inline-size;
 }
 
 .project-card {
+  --project-card-border: #e9ebeb;
+  --project-card-viewport-mask-edge-stop: -1px;
+  --project-card-viewport-mask-opaque-stop: 0px;
   position: relative;
   background: var(--bg-surface);
-  border: var(--stroke-thin) solid var(--border-default);
+  border: var(--stroke-thin) solid var(--project-card-border);
   border-radius: var(--radius-sm);
   padding: 6px;
   overflow: hidden;
   isolation: isolate;
   display: block;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, var(--project-card-top-veil-edge-opacity))
+      var(--project-card-viewport-mask-edge-stop),
+    #000 var(--project-card-viewport-mask-opaque-stop)
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, var(--project-card-top-veil-edge-opacity))
+      var(--project-card-viewport-mask-edge-stop),
+    #000 var(--project-card-viewport-mask-opaque-stop)
+  );
   transition:
     transform 250ms var(--easing-default),
     box-shadow 250ms var(--easing-default);
@@ -631,10 +659,12 @@ body:not([data-page-layout="hero"]) .app {
 }
 
 .project-card--sm { aspect-ratio: 171 / 148; }
-.project-card--md { grid-column: 1 / -1; height: 148px; }
+.project-card--md { grid-column: 1 / -1; height: var(--project-card-sm-height); }
 .project-card--lg { grid-column: 1 / -1; aspect-ratio: 354 / 308; }
 
-/* Image fills the card inside the shared card inset. */
+/* Image fills the card inside the shared card inset. The shared wrapper lets
+   one card switch between image-backed and split layouts at a breakpoint. */
+.project-card__image,
 .project-card > img {
   position: absolute;
   inset: 6px;
@@ -643,6 +673,15 @@ body:not([data-page-layout="hero"]) .app {
   object-fit: cover;
   border-radius: 2px;
   z-index: 0;
+  overflow: hidden;
+}
+
+.project-card__image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 html[data-project-image-reveal="enabled"] img[data-pixel-reveal] {
@@ -687,7 +726,7 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
   border-radius: 2px;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, 0) 0%,
     rgba(0, 0, 0, 0.5) 100%
   );
   z-index: 1;
@@ -696,10 +735,11 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
 
 .project-card__title {
   position: absolute;
-  left: 18px;
-  right: 18px;
+  left: 12px;
+  right: 12px;
   bottom: 14px;
   z-index: 2;
+  font-family: var(--font-family);
   font-size: 18px;
   line-height: 20px;
   font-weight: var(--fw-regular);
@@ -712,17 +752,18 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
-  z-index: 2;
+  z-index: 3;
   display: inline-grid;
   align-items: center;
   width: fit-content;
   height: var(--space-4);
-  padding: 0 var(--space-1);
+  padding-block: 0;
+  padding-inline: 4px;
   background: var(--bg-surface);
-  border: var(--stroke-thin) solid var(--border-default);
+  border: var(--stroke-thin) solid var(--project-card-border);
   border-radius: 2px;
-  font-size: 12px;
-  line-height: var(--lh-button-sm);
+  font-size: 11px;
+  line-height: 8px;
   font-weight: var(--fw-semibold);
   color: var(--fg-default);
   white-space: nowrap;
@@ -738,6 +779,10 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
   grid-area: 1 / 1;
   align-items: center;
   justify-content: center;
+  height: 8px;
+  line-height: 8px;
+  text-box-edge: cap alphabetic;
+  text-box-trim: trim-both;
 }
 
 .project-card__tag-progress {
@@ -776,36 +821,46 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
 
 /* Split card: half title (dark), half image */
 .project-card--split {
-  display: flex;
-  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
   padding: 6px;
-  height: 148px;
 }
 .project-card--split > .project-card__title {
   position: static;
-  flex: 1 1 0;
-  display: flex;
-  align-items: flex-end;
-  padding: var(--space-3);
+  display: block;
+  align-self: end;
+  min-width: 0;
+  padding: 6px;
   color: var(--fg-default);
 }
 .project-card--split .project-card__image {
   position: relative;
-  flex: 1 1 0;
+  inset: auto;
+  width: auto;
+  height: auto;
+  min-width: 0;
   border-radius: 2px;
   overflow: hidden;
 }
-.project-card--split .project-card__image img {
+.project-card--split .project-card__image::after {
+  content: "";
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  z-index: 2;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+  pointer-events: none;
 }
 
-/* The view timeline handles entry from the bottom. The top-edge opacity is
-   supplied by the shared viewport controller so tall and short components
-   disappear across the same physical viewport coordinates. */
+/* The view timeline handles entry from the bottom. The shared viewport
+   controller supplies whole-element top opacity for text and compact
+   components. Project cards instead use the viewport-aligned mask above, so
+   their upper rows fade before the lower rows as cards cross the top veil. */
 @supports (animation-timeline: view()) {
   .screen :is(.h1, .lede, .answer) .leet-word,
   .screen[data-page-layout="hero"] .page-logo--mobile,
@@ -1419,6 +1474,42 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
     );
   }
 
+  body[data-screen="work"] .project-grid {
+    /* At the 1296px cap: 3 × 416px columns, 24px gaps and 350px rows. */
+    --project-card-desktop-row-height: min(
+      350px,
+      calc(28.0448718vw - 24.6794872px)
+    );
+    align-self: center;
+    width: min(1296px, calc(100vw - 40px));
+    max-width: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: row;
+    grid-auto-rows: var(--project-card-desktop-row-height);
+    gap: var(--space-6);
+  }
+
+  body[data-screen="work"] .project-card--sm {
+    grid-column: span 1;
+    grid-row: span 1;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  body[data-screen="work"] .project-card--md {
+    grid-column: span 2;
+    grid-row: span 1;
+    height: 100%;
+    gap: calc(var(--space-8) + var(--space-1));
+  }
+
+  body[data-screen="work"] .project-card--lg {
+    grid-column: span 2;
+    grid-row: span 2;
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
   .app {
     max-width: 1336px;
     padding: 0 20px;
@@ -1518,6 +1609,14 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
     left: calc(32px + var(--space-3));
   }
 
+  body:not([data-screen="home"]) .site-header .logo-lg {
+    display: none;
+  }
+
+  body:not([data-screen="home"]) .site-header .site-identity {
+    left: 0;
+  }
+
   .token-counter {
     top: var(--space-6);
   }
@@ -1576,6 +1675,11 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
   *, *::before, *::after {
     transition: none !important;
     animation: none !important;
+  }
+
+  .screen .project-card {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   body[data-menu="open"] .menu-btn__label {

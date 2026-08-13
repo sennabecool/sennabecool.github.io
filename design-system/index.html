@@ -8,8 +8,8 @@
   <meta name="description" content="Atomic design system, tokens, components and interaction patterns for Leo Cabannes' portfolio." />
   <link rel="icon" type="image/svg+xml" href="../assets/logo.svg" />
   <link rel="stylesheet" href="../tokens.css?v=141" />
-  <link rel="stylesheet" href="../styles.css?v=212" />
-  <link rel="stylesheet" href="design-system.css?v=4" />
+  <link rel="stylesheet" href="../styles.css?v=219" />
+  <link rel="stylesheet" href="design-system.css?v=5" />
 </head>
 <body class="ds-page">
   <a class="ds-skip-link" href="#ds-main">Skip to content</a>
@@ -247,8 +247,32 @@
 
           <article class="ds-specimen ds-specimen--wide" data-component="Project Cards" data-searchable="organism project cards grid image progress small medium large split">
             <div class="ds-specimen__heading"><div><span>Organism</span><h3>Project Cards</h3></div><code>.project-card</code></div>
-            <div class="ds-preview ds-preview--projects"><div class="project-grid"><article class="project-card project-card--sm"><img src="../assets/carrefour.png" alt="" /><h4 class="project-card__title">Carrefour Links</h4></article><article class="project-card project-card--sm"><img src="../assets/amundi.png" alt="" /><h4 class="project-card__title">Amundi</h4></article><article class="project-card project-card--md project-card--split"><h4 class="project-card__title project-card__title--dark">AI-assisted inspiration</h4><span class="project-card__image"><img src="../assets/perfumers.png" alt="" /></span></article></div></div>
-            <p class="ds-spec">Small, medium, large and split variants share image reveal and progress behavior.</p>
+            <div class="ds-frame-toolbar ds-project-controls"><span>Interactive loading state</span><button type="button" data-project-card-replay>Play on all sizes</button></div>
+            <div class="ds-preview ds-preview--projects">
+              <div class="project-grid">
+                <article class="project-card project-card--sm" data-project-size-mobile="sm" data-project-size-desktop="lg">
+                  <h4 class="project-card__title">Carrefour Links</h4>
+                  <span class="project-card__tag" data-pixel-progress aria-hidden="true"><span class="project-card__tag-progress"><span data-pixel-progress-value>20</span><span>%</span></span><span class="project-card__tag-done" data-pixel-progress-done>DONE!</span></span>
+                  <span class="project-card__image"><img src="../assets/carrefour.png" alt="" /></span>
+                </article>
+                <article class="project-card project-card--sm" data-project-size-mobile="sm" data-project-size-desktop="sm">
+                  <h4 class="project-card__title">Amundi</h4>
+                  <span class="project-card__tag" data-pixel-progress aria-hidden="true"><span class="project-card__tag-progress"><span data-pixel-progress-value>20</span><span>%</span></span><span class="project-card__tag-done" data-pixel-progress-done>DONE!</span></span>
+                  <span class="project-card__image"><img src="../assets/amundi.png" alt="" /></span>
+                </article>
+                <article class="project-card project-card--md project-card--split" data-project-size-mobile="md" data-project-size-desktop="md">
+                  <h4 class="project-card__title project-card__title--dark">AI-assisted inspiration</h4>
+                  <span class="project-card__tag" data-pixel-progress aria-hidden="true"><span class="project-card__tag-progress"><span data-pixel-progress-value>20</span><span>%</span></span><span class="project-card__tag-done" data-pixel-progress-done>DONE!</span></span>
+                  <span class="project-card__image"><img src="../assets/perfumers.png" alt="" /></span>
+                </article>
+                <article class="project-card project-card--lg" data-project-size-mobile="lg" data-project-size-desktop="sm">
+                  <h4 class="project-card__title">Full-height project card</h4>
+                  <span class="project-card__tag" data-pixel-progress aria-hidden="true"><span class="project-card__tag-progress"><span data-pixel-progress-value>20</span><span>%</span></span><span class="project-card__tag-done" data-pixel-progress-done>DONE!</span></span>
+                  <span class="project-card__image"><img src="../assets/project4.png" alt="" /></span>
+                </article>
+              </div>
+            </div>
+            <p class="ds-spec">Each card can select small, medium or large independently at the mobile and desktop grid breakpoints.</p>
           </article>
 
           <article class="ds-specimen ds-specimen--wide" data-component="Topbar and Chatbox" data-searchable="organism topbar chatbox shell menu open close live">
@@ -281,6 +305,7 @@
   </div>
 
   <div class="ds-toast" data-ds-toast role="status" aria-live="polite"></div>
-  <script src="design-system.js?v=3"></script>
+  <script src="../project-image-reveal.js?v=8"></script>
+  <script src="design-system.js?v=4"></script>
 </body>
 </html>

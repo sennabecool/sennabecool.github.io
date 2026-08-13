@@ -198,9 +198,15 @@ from the prompt rows by the spacing scale. Each subpage ends with 40px of
 scroll clearance above the closed chatbox. Short handoff delays stay in the
 page-sequence JavaScript configuration.
 Use `data-viewport-fade` on non-text page components that must disappear with
-the scroll timeline. Shared text, cards, actions, and suggestions are already
-registered by their component selectors; the top fade reaches zero before the
-component crosses viewport `y=0`.
+the scroll timeline. Shared text, actions, and suggestions are already
+registered by their component selectors; their top fade reaches zero before
+the component crosses viewport `y=0`. Project cards retain the same bottom
+entry animation but use a separate mask fixed to the viewport's 0–160px top
+zone. The card retains 50% opacity exactly at the physical `y=0` edge and
+reaches full opacity at `y=160`, keeping the veil subtle. Each horizontal slice
+fades only while passing through that zone, so a tall card's lower content
+remains opaque until it reaches the veil. Reduced motion disables this
+scroll-linked card mask along with the entry animation.
 
 ### Chat Bubble
 
@@ -254,7 +260,18 @@ both component states; page-specific values are not required. A shared
 `ResizeObserver` also animates vertical chip displacement when progressive
 text causes an expanded chip to wrap onto multiple lines.
 
-### Project Images
+### Project Cards and Images
+
+Every responsive card uses the same `.project-card__title`,
+`.project-card__tag`, and `.project-card__image` structure. Declare its grid
+variant with `data-project-size-mobile` and `data-project-size-desktop`, using
+`sm`, `md`, or `lg`. The project-image controller synchronizes the active
+modifier class at the shared 768px grid breakpoint, so one card can move
+between image-backed and horizontal split layouts without changing markup.
+The work page expands the desktop grid to a centered 1296px maximum with three
+columns and 24px gaps. At that maximum, `sm` is 416 × 350px, `md` spans two
+columns at 856 × 350px, and `lg` spans two columns and two rows at 856 × 724px;
+the row height scales with the available grid width below the maximum.
 
 Add `data-pixel-reveal` to a project image and load
 `project-image-reveal.js` with `defer` on that page. The controller overlays
@@ -268,13 +285,14 @@ live in the project-image controller configuration. The chip counts continuously
 while the canvas advances through one resolution level at each 20% milestone.
 Each reveal lasts between 2.2 and 3 seconds and receives a randomized pace profile.
 The counter can briefly regress, while image resolution keeps its highest milestone.
-At completion, the ambient Leet `DONE!` sequence replaces the counter and dismisses the chip.
+At completion, the plain `DONE!` label replaces the counter and dismisses the chip.
 Each newly reached percentage point consumes the controller's configured token
 cost.
 Reduced-motion users receive the native image and a completed progress value
 immediately. Dynamic pages can call `portfolioProjectImages.init(root)`,
 while `portfolioProjectImages.replay(root)` is available for deliberate
-replays.
+replays. Pass `{ startImmediately: true }` as its second argument to replay
+every card in a specimen regardless of viewport intersection.
 
 ### Shell
 

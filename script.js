@@ -76,6 +76,10 @@
     startY: readCssNumber('--content-fade-out-start-y', 80),
     endY: readCssNumber('--content-fade-out-end-y', 0)
   });
+  const projectCardTopVeil = Object.freeze({
+    edgeY: 0,
+    opaqueY: readCssNumber('--project-card-top-veil-height', 160)
+  });
   const menuMotion = Object.freeze({
     duration: readCssNumber('--duration-spring', 380),
     easing: readCssValue('--easing-flip', 'cubic-bezier(0.32, 0.72, 0, 1)')
@@ -112,14 +116,15 @@
       '.screen[data-page-layout="hero"] .page-logo--mobile',
       '.screen [data-viewport-fade]',
       '.screen .message-actions',
-      '.screen .suggestion',
-      '.screen .project-card'
+      '.screen .suggestion'
     ].join(', ');
     let targets = [];
+    let projectCards = [];
     let frame = null;
 
     const refreshTargets = () => {
       targets = [...document.querySelectorAll(selector)];
+      projectCards = [...document.querySelectorAll('.screen .project-card')];
     };
 
     const render = () => {
@@ -133,6 +138,18 @@
           Math.min(1, (top - viewportTopFade.endY) / distance)
         );
         element.style.setProperty('--content-viewport-top-opacity', opacity.toFixed(4));
+      });
+      projectCards.forEach(card => {
+        if (!card.getClientRects().length) return;
+        const top = card.getBoundingClientRect().top;
+        card.style.setProperty(
+          '--project-card-viewport-mask-edge-stop',
+          `${(projectCardTopVeil.edgeY - top).toFixed(2)}px`
+        );
+        card.style.setProperty(
+          '--project-card-viewport-mask-opaque-stop',
+          `${(projectCardTopVeil.opaqueY - top).toFixed(2)}px`
+        );
       });
     };
 
@@ -1516,7 +1533,7 @@
       });
     }
 
-    const fullRolloverTarget = el.closest('.suggestion');
+    const fullRolloverTarget = el.closest('.suggestion, .project-card');
     const groupedRolloverTarget = el.closest('.chat-bubble');
     if (fullRolloverTarget) {
       fullRolloverTarget.addEventListener('pointerenter', replayAllLeet);

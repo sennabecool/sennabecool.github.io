@@ -81,7 +81,7 @@
     'Conversation Header': ['Back Button + Chat Bubble', 'secondary-page header', 'writing / corrected / wrapped', 'Pins prompt right while intrinsic text grows left.', '--space-3, --radius-chip, --size-icon'],
     'Message': ['body + Message Actions', 'home / subpage / incremental', 'queued / writing / corrected / revealed', 'Owns cascade order, scroll reveal and actions.', '--fz-body, --lh-body, --space-6'],
     'Prompt Suggestions': ['title + prompt rows', 'home / subpage', 'queued / cascading / interactive', 'Always follows Message Actions by the shared gap.', '--space-3, --space-10, --border-default'],
-    'Project Cards': ['image + title + progress', 'small / medium / large / split', 'queued / loading / complete', 'Depixelates when entering the reveal boundary.', '--radius-sm, --shadow-floating, --fg-on-dark'],
+    'Project Cards': ['image + title + progress', 'responsive sm / md / lg', 'queued / loading / complete', 'Selects its size from the active grid breakpoint and depixelates on reveal.', '--radius-sm, --shadow-floating, --fg-on-dark'],
     'Topbar and Chatbox': ['identity + counter + global navigation', 'desktop / mobile / menu open', 'intro / persistent / open / closed', 'Production shell remains fixed across pages.', '--bg-page, --bg-surface, --border-glass, --shadow-floating'],
     'Home Hero Template': ['topbar + hero + message + followups', 'responsive template', 'first load / restored visit', 'Generates only above-fold content before scroll reveal.', '--fz-h1, --lh-h1, --space-10'],
     'Conversation Template': ['conversation header + assistant response', 'secondary-page template', 'initial / incremental reveal', 'Standardises every route outside Home.', '--space-6, --space-10, --size-icon'],
@@ -274,6 +274,40 @@
     });
   }
 
+  function setupProjectCardReplay() {
+    const button = document.querySelector('[data-project-card-replay]');
+    const specimen = button?.closest('[data-component="Project Cards"]');
+    if (!button || !specimen) return;
+
+    let resetTimer = null;
+    const idleLabel = button.textContent;
+
+    button.addEventListener('click', () => {
+      specimen.querySelectorAll('.project-card img').forEach(image => {
+        image.setAttribute('data-pixel-reveal', '');
+      });
+
+      const projectImages = globalThis.portfolioProjectImages;
+      if (!projectImages) {
+        button.textContent = 'Animation unavailable';
+        return;
+      }
+
+      clearTimeout(resetTimer);
+      button.disabled = true;
+      button.textContent = 'Loading all sizes…';
+      projectImages.replay(specimen, { startImmediately: true });
+
+      const resetDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 700
+        : 4300;
+      resetTimer = window.setTimeout(() => {
+        button.disabled = false;
+        button.textContent = idleLabel;
+      }, resetDelay);
+    });
+  }
+
   function enhanceSpecimens() {
     const labels = ['Anatomy', 'Variants', 'States', 'Behavior', 'Tokens'];
     document.querySelectorAll('[data-component]').forEach(specimen => {
@@ -339,6 +373,7 @@
       control.addEventListener('click', event => event.preventDefault());
     });
     setupFrameControls();
+    setupProjectCardReplay();
     setupSectionTracking();
   }
 

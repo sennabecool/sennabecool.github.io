@@ -517,8 +517,27 @@ body.ds-page {
 }
 
 .ds-preview--projects .project-grid {
+  grid-auto-flow: dense;
   width: min(100%, 354px);
   margin: 0 auto;
+}
+
+.ds-project-controls {
+  margin-top: 0;
+}
+
+.ds-project-controls + .ds-preview {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.ds-project-controls button {
+  background: var(--bg-inverse);
+  color: var(--fg-on-dark);
+}
+
+.ds-project-controls button:disabled {
+  cursor: wait;
+  opacity: 0.56;
 }
 
 .ds-spec {
