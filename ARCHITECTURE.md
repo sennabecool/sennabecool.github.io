@@ -105,8 +105,8 @@ Writing and correction expose completion promises, so component dependencies
 follow actual character events rather than parallel `setTimeout` estimates.
 The top edge of `.chatbox-wrap` is the shared lower boundary for initial text
 classification, the last visible Leet character, and the viewport observer.
-`--page-intro-fold-bottom-inset` is used only as a geometry fallback when the
-chatbox cannot be measured. The queue is released only when the initial writing
+The page-intro configuration uses the closed chatbox floor as a geometry
+fallback when the chatbox cannot be measured. The queue is released only when the initial writing
 promise resolves. Initial correction may therefore continue while the first
 deferred group writes, keeping the page ordered without introducing a
 correction-length pause.
@@ -146,9 +146,67 @@ on an anchor when a real fallback URL is available:
 The shared click controller follows the browser's previous referring page.
 `data-fallback-href` is used when no referring page exists, avoiding a return
 to the browser's initial blank document. Component
-geometry, color, icon stroke, radius, and interaction motion come exclusively
-from the `--back-button-*` tokens. Its translucent background, blur, border,
-and inset highlights alias the same `--glass-shell-*` tokens as the chatbox.
+geometry stays with the component in `styles.css`; color, icon stroke, radius,
+blur, and motion consume the shared foundations also used by the chatbox.
+
+### Conversation Header
+
+Every standalone page outside Home starts with the same full-column header:
+
+```html
+<header class="top-bar top-bar--conversation">
+  <a class="back-button" href="..." data-action="back" data-fallback-href="..." aria-label="Go back">
+    <svg class="back-button__icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+  </a>
+  <h1 class="chat-bubble chat-bubble--selected question-chip" data-leet-grow="intrinsic">
+    <span class="chip__copy">
+      <span class="chip__muted" data-leet-text>Prompt prefix</span>
+      <span class="chip__keyword" data-leet-text>label</span>
+      <span class="chip__muted" data-leet-text>suffix</span>
+    </span>
+  </h1>
+</header>
+<div class="subpage-content">
+  <a class="logo logo-sm" data-assistant-avatar data-assistant-avatar-state="hidden">...</a>
+  <div class="message" data-message>
+    <div class="message__body" data-message-body>...</div>
+    <div class="message-actions" data-message-actions>...</div>
+  </div>
+  <div class="suggestions" data-reveal-on-scroll>
+  <p class="suggestions__title" data-leet-text>Dive deeper</p>
+  ...
+</div>
+</div>
+```
+
+The header fills the page content column. Its first grid track keeps the Back
+button fixed at the top-left while the question bubble is pinned to the right
+edge of the second track. `data-leet-grow="intrinsic"` opts the bubble into
+zero-width Leet preparation, so its right edge stays fixed while its visible
+content grows leftward. At the available-width limit, the shared chat bubble
+wraps only between complete words and the header height follows it naturally,
+without additional vertical padding. The shared subpage layout positions this
+header directly below the fixed site header; individual pages must not add
+their own top offset. Every secondary page places its specific content inside
+`.subpage-content`; its internal responsive configuration
+`--subpage-content-item-gap` provides 12px on mobile and
+24px on desktop, both vertically and horizontally. The assistant avatar is
+revealed after the final conversation-header segment, then message content,
+actions, timestamp, and suggestions continue in DOM order. The shared Prompt
+Suggestions component always begins with its `Dive deeper` title, separated
+from the prompt rows by the spacing scale. Each subpage ends with 40px of
+scroll clearance above the closed chatbox. Short handoff delays stay in the
+page-sequence JavaScript configuration.
+Use `data-viewport-fade` on non-text page components that must disappear with
+the scroll timeline. Shared text, actions, and suggestions are already
+registered by their component selectors; their top fade reaches zero before
+the component crosses viewport `y=0`. Project cards retain the same bottom
+entry animation but use a separate mask fixed to the viewport's 0–160px top
+zone. The card retains 50% opacity exactly at the physical `y=0` edge and
+reaches full opacity at `y=160`, keeping the veil subtle. Each horizontal slice
+fades only while passing through that zone, so a tall card's lower content
+remains opaque until it reaches the veil. Reduced motion disables this
+scroll-linked card mask along with the entry animation.
 
 ### Chat Bubble
 
@@ -183,6 +241,8 @@ internal spacing cannot drift.
 Share, rating, timestamp, reveal, correction color, and token consumption are
 scoped to the nearest message component. The action footer waits for the final
 text inside `[data-message-body]`, including text revealed later on scroll.
+Every subpage message includes this footer; do not duplicate or restyle its
+controls per route.
 Put one `data-reveal-on-scroll` marker on a parent when its descendant texts
 form one content unit. Separate markers still join the page-level queue and
 keep their relative DOM order.
@@ -200,7 +260,18 @@ both component states; page-specific values are not required. A shared
 `ResizeObserver` also animates vertical chip displacement when progressive
 text causes an expanded chip to wrap onto multiple lines.
 
-### Project Images
+### Project Cards and Images
+
+Every responsive card uses the same `.project-card__title`,
+`.project-card__tag`, and `.project-card__image` structure. Declare its grid
+variant with `data-project-size-mobile` and `data-project-size-desktop`, using
+`sm`, `md`, or `lg`. The project-image controller synchronizes the active
+modifier class at the shared 768px grid breakpoint, so one card can move
+between image-backed and horizontal split layouts without changing markup.
+The work page expands the desktop grid to a centered 1296px maximum with three
+columns and 24px gaps. At that maximum, `sm` is 416 × 350px, `md` spans two
+columns at 856 × 350px, and `lg` spans two columns and two rows at 856 × 724px;
+the row height scales with the available grid width below the maximum.
 
 Add `data-pixel-reveal` to a project image and load
 `project-image-reveal.js` with `defer` on that page. The controller overlays
@@ -210,17 +281,18 @@ project card can expose the shared progress chip with `data-pixel-progress`
 and a child marked `data-pixel-progress-value`.
 
 Timing, cascade, pixel size, viewport threshold, and device-pixel-ratio limits
-come from shared motion tokens. The chip counts continuously from 0 to 100,
+live in the project-image controller configuration. The chip counts continuously from 0 to 100,
 while the canvas advances through one resolution level at each 20% milestone.
 Each reveal lasts between 2.2 and 3 seconds and receives a randomized pace profile.
 The counter can briefly regress, while image resolution keeps its highest milestone.
-At completion, the ambient Leet `DONE!` sequence replaces the counter and dismisses the chip.
-Each newly reached percentage point consumes the token cost defined in
-`--project-image-reveal-token-cost`.
+At completion, the plain `DONE!` label replaces the counter and dismisses the chip.
+Each newly reached percentage point consumes the controller's configured token
+cost.
 Reduced-motion users receive the native image and a completed progress value
 immediately. Dynamic pages can call `portfolioProjectImages.init(root)`,
 while `portfolioProjectImages.replay(root)` is available for deliberate
-replays.
+replays. Pass `{ startImmediately: true }` as its second argument to replay
+every card in a specimen regardless of viewport intersection.
 
 ### Shell
 
@@ -229,12 +301,54 @@ state therefore persists while pages change.
 
 ## Tokens
 
-All visual and timing values live in `tokens.css`.
+`tokens.css` contains exactly 46 portfolio-wide design decisions:
 
-- Primitive tokens: colors, typography, spacing, radii.
-- Semantic tokens: backgrounds, foregrounds, borders, shadows.
-- Component tokens: page, topbar, message, suggestion, chatbox.
-- Motion tokens: Leet engine, page timing planner, menu FLIP, counter.
+- 12 semantic colors.
+- 10 spacing values on the 4px scale.
+- 12 typography values.
+- 7 border, radius, and icon values.
+- 5 shared effect and motion values.
 
-Component CSS and JavaScript should consume tokens rather than introduce new
-raw design values.
+Component-only geometry stays next to its component in `styles.css`.
+Algorithmic timings and thresholds stay in the JavaScript configuration that
+owns the behavior. Neither category is promoted to a global token unless the
+same design decision is reused by multiple independent components.
+
+Before adding a token, first reuse the closest foundation value. Add a new one
+only when it expresses a recurring portfolio-wide decision; keep the complete
+foundation between 30 and 50 tokens.
+
+## Design System
+
+The public `design-system/index.html` route is the canonical visual inventory
+for the portfolio. Its documentary layout is intentionally independent from
+the portfolio shell: it has no fixed site topbar, token counter, or global
+chatbox.
+
+- Foundations are generated directly from every custom property declared in
+  `tokens.css`. The catalogue shows the source expression, computed value,
+  and a visual preview without maintaining a parallel token list.
+- Components are organised as Atoms, Molecules, Organisms, Templates, and
+  Pages. Production classes and assets are used for every specimen.
+- Viewport-dependent organisms and complete pages are rendered in isolated
+  live frames. The `?ds-preview=1` contract keeps all behavior available while
+  disabling persistent token spending.
+- `data-target="design-system"` is the shared navigation key for both the
+  collapsed chip and expanded chat bubble. Home uses `design-system/`; nested
+  document routes use `../design-system/`.
+
+### Component update contract
+
+Every component creation or behavior change must update the Design System in
+the same change:
+
+1. Reuse the 46 shared foundations; add a token only for a genuinely recurring
+   portfolio-wide decision.
+2. Update the production component classes and behavior.
+3. Update its Design System specimen, anatomy, variants, states, behavior, and
+   consumed-token references.
+4. Verify the production context and the documentation page at desktop and
+   mobile widths.
+
+This keeps the Design System a live contract rather than a manually maintained
+gallery.

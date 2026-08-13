@@ -7,8 +7,8 @@
   <title>Leo Cabannes — Human-centered designer crafting with, for, and within AI</title>
   <meta name="description" content="Portfolio of Leo Cabannes, Lead Designer (UX/UI) at Artefact in Paris, designing GenAI use cases for Business Intelligence." />
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
-  <link rel="stylesheet" href="tokens.css?v=126" />
-  <link rel="stylesheet" href="styles.css?v=199" />
+  <link rel="stylesheet" href="tokens.css?v=141" />
+  <link rel="stylesheet" href="styles.css?v=219" />
 </head>
 <body
   data-screen="home"
@@ -110,6 +110,7 @@
           </div>
 
           <div class="suggestions" data-reveal-on-scroll aria-label="Suggested prompts">
+          <p class="suggestions__title" data-leet-text data-viewport-fade>Dive deeper</p>
             <button type="button" class="suggestion" data-target="about" data-suggestion-state="hidden">
               <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
               <span data-leet-text>Tell me more about yourself</span>
@@ -130,29 +131,49 @@
     <!-- =================== ABOUT =================== -->
     <section class="screen page page--conversation" data-screen-name="about" data-page-layout="conversation" aria-labelledby="about-title" hidden>
       <header class="top-bar top-bar--conversation">
-        <button type="button" class="back-button" data-action="back" aria-label="Go back">
+        <button type="button" class="back-button" data-action="back" data-viewport-fade aria-label="Go back">
           <svg class="back-button__icon" aria-hidden="true"><use href="#i-chevron-left"/></svg>
         </button>
-        <h1 id="about-title" class="chat-bubble chat-bubble--selected question-chip">
+        <h1 id="about-title" class="chat-bubble chat-bubble--selected question-chip" data-leet-grow="intrinsic" data-viewport-fade>
           <span class="chip__copy">
             <span class="chip__muted" data-leet-text>Tell me more</span>
-            <span class="chip__keyword">about</span>
+            <span class="chip__keyword" data-leet-text>about</span>
             <span class="chip__muted" data-leet-text>yourself</span>
           </span>
         </h1>
       </header>
 
-      <a class="logo logo-sm" href="#home" data-target="home" aria-label="Leo Cabannes home">
-        <img src="assets/logo.svg" alt="" />
-      </a>
+      <div class="subpage-content">
+        <a class="logo logo-sm" href="#home" data-target="home" data-assistant-avatar data-assistant-avatar-state="hidden" data-viewport-fade aria-label="Leo Cabannes home">
+          <img src="assets/logo.svg" alt="" />
+        </a>
 
-      <div class="answer">
-        <p data-reveal-on-scroll data-leet-text>Bonjour !</p>
-        <p data-reveal-on-scroll data-leet-text>I&rsquo;m Leo, a <strong>Lead Designer (UX/UI)</strong> based in Paris managing a small team of researchers and product designers at Artefact.</p>
-        <p data-reveal-on-scroll data-leet-text>Lately my focus has been on designing <strong>GenAI use cases</strong> for Business Intelligence. This pushed me to dig further into data analysis and data engineering, curious to discover how better data foundations can inspire innovative problem-solving products and/or features.</p>
-        <p data-reveal-on-scroll data-leet-text>When I&rsquo;m not working, you might come across me and my bike in the train, heading out for a <strong>day-long gravel ride</strong> somewhere in France.</p>
+        <div class="message" data-message>
+          <div class="message__body answer" data-message-body>
+            <p data-reveal-on-scroll data-leet-text>Bonjour !</p>
+            <p data-reveal-on-scroll data-leet-text>I&rsquo;m Leo, a <strong>Lead Designer (UX/UI)</strong> based in Paris managing a small team of researchers and product designers at Artefact.</p>
+            <p data-reveal-on-scroll data-leet-text>Lately my focus has been on designing <strong>GenAI use cases</strong> for Business Intelligence. This pushed me to dig further into data analysis and data engineering, curious to discover how better data foundations can inspire innovative problem-solving products and/or features.</p>
+            <p data-reveal-on-scroll data-leet-text>When I&rsquo;m not working, you might come across me and my bike in the train, heading out for a <strong>day-long gravel ride</strong> somewhere in France.</p>
+          </div>
 
-        <div class="suggestions" data-reveal-on-scroll>
+          <div class="message-actions" data-message-actions data-message-actions-state="hidden" data-message-actions-corrected="false" aria-label="Message actions">
+            <div class="message-actions__buttons">
+              <button type="button" class="message-action" data-action="share-message" aria-label="Share this message" title="Share">
+                <svg aria-hidden="true"><use href="#i-share"/></svg>
+              </button>
+              <button type="button" class="message-action" data-action="rate-message" data-rating="like" aria-label="Like this message" aria-pressed="false" title="Like">
+                <svg aria-hidden="true"><use href="#i-like"/></svg>
+              </button>
+              <button type="button" class="message-action message-action--dislike" data-action="rate-message" data-rating="dislike" aria-label="Dislike this message" aria-pressed="false" title="Dislike">
+                <svg aria-hidden="true"><use href="#i-like"/></svg>
+              </button>
+            </div>
+            <time class="message-actions__time" data-message-generated-at data-leet-text aria-label="Message generated at"></time>
+          </div>
+        </div>
+
+        <div class="suggestions" data-reveal-on-scroll aria-label="Suggested prompts">
+          <p class="suggestions__title" data-leet-text data-viewport-fade>Dive deeper</p>
           <button type="button" class="suggestion" data-target="work" data-href="work/" data-suggestion-state="hidden">
             <svg class="suggestion__icon" aria-hidden="true"><use href="#i-corner-down-right"/></svg>
             <span data-leet-text>Where have you worked?</span>
@@ -189,6 +210,7 @@
             <button type="button" class="chip chip--sm" data-target="contact">contact</button>
             <button type="button" class="chip chip--sm" data-target="places">places</button>
             <button type="button" class="chip chip--sm" data-target="songs">songs</button>
+            <button type="button" class="chip chip--sm" data-target="design-system" data-href="design-system/">design system</button>
             <button type="button" class="chip chip--sm" data-action="toggle-dark">dark mode</button>
           </div>
 
@@ -235,6 +257,12 @@
                 <span class="chip__muted" data-leet-text>?</span>
               </span>
             </button>
+            <button type="button" class="chat-bubble chip chip--bg" data-target="design-system" data-href="design-system/">
+              <span class="chip__copy">
+                <span class="chip__muted" data-leet-text>Let me see the</span>
+                <span class="chip__keyword" data-leet-text>design system</span>
+              </span>
+            </button>
             <button type="button" class="chat-bubble chip chip--bg" data-action="toggle-dark">
               <span class="chip__copy">
                 <span class="chip__muted" data-leet-text>Switch to</span>
@@ -255,6 +283,6 @@
     </div>
   </nav>
 
-  <script src="script.js?v=182"></script>
+  <script src="script.js?v=191"></script>
 </body>
 </html>

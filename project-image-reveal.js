@@ -4,6 +4,7 @@
   const root = document.documentElement;
   const rootStyles = getComputedStyle(root);
   const effects = new Map();
+  const projectCardBreakpoint = window.matchMedia('(min-width: 768px)');
   let intersectionObserver = null;
 
   function readCssNumber(name, fallback) {
@@ -38,6 +39,34 @@
   const prefersReducedMotion = window.matchMedia(
     '(prefers-reduced-motion: reduce)'
   ).matches;
+
+  function syncProjectCardSizes(scope = document) {
+    scope.querySelectorAll(
+      '.project-card[data-project-size-mobile], .project-card[data-project-size-desktop]'
+    ).forEach(card => {
+      const mobileSize = card.dataset.projectSizeMobile || 'sm';
+      const desktopSize = card.dataset.projectSizeDesktop || mobileSize;
+      const size = projectCardBreakpoint.matches ? desktopSize : mobileSize;
+      if (!['sm', 'md', 'lg'].includes(size)) return;
+
+      card.classList.remove(
+        'project-card--sm',
+        'project-card--md',
+        'project-card--lg',
+        'project-card--split'
+      );
+      card.classList.add(`project-card--${size}`);
+      card.classList.toggle('project-card--split', size === 'md');
+      card.dataset.projectSize = size;
+    });
+  }
+
+  function setupResponsiveProjectCards() {
+    syncProjectCardSizes();
+    projectCardBreakpoint.addEventListener('change', () => {
+      syncProjectCardSizes();
+    });
+  }
 
   function createMilestoneBlocks(startBlock, milestoneCount) {
     const count = Math.max(1, Math.round(milestoneCount));
@@ -172,7 +201,7 @@
       this.resizeObserver = null;
     }
 
-    async prepare() {
+    async prepare({ startImmediately = false } = {}) {
       this.resetProgressTag();
       this.image.dataset.pixelDuration = String(this.duration);
       this.image.dataset.pixelState = 'loading';
@@ -208,7 +237,9 @@
         this.resizeObserver.observe(this.image);
       }
 
-      if (intersectionObserver) {
+      if (startImmediately) {
+        this.start();
+      } else if (intersectionObserver) {
         intersectionObserver.observe(this.image);
       } else {
         this.start();
@@ -442,7 +473,8 @@
     }
   }
 
-  function init(scope = document) {
+  function init(scope = document, { startImmediately = false } = {}) {
+    syncProjectCardSizes(scope);
     const images = [...scope.querySelectorAll(selector)]
       .filter(image => !effects.has(image));
     if (!images.length) return;
@@ -464,17 +496,19 @@
     images.forEach((image, index) => {
       const effect = new ProjectImageReveal(image, index);
       effects.set(image, effect);
-      effect.prepare();
+      effect.prepare({ startImmediately });
     });
   }
 
-  function replay(scope = document) {
+  function replay(scope = document, options = {}) {
     [...scope.querySelectorAll(selector)].forEach(image => {
       effects.get(image)?.destroy();
       delete image.dataset.pixelState;
     });
-    init(scope);
+    init(scope, options);
   }
+
+  setupResponsiveProjectCards();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => init(), { once: true });
@@ -482,5 +516,5 @@
     init();
   }
 
-  globalThis.portfolioProjectImages = { init, replay };
+  globalThis.portfolioProjectImages = { init, replay, syncSizes: syncProjectCardSizes };
 })();
