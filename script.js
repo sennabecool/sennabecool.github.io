@@ -10,6 +10,7 @@
   const viewportBoundaryElement = document.querySelector('.chatbox-wrap');
   const navStack = defaultScreenName ? [defaultScreenName] : [];
   const usesHashRouting = body.dataset.routing !== 'document';
+  const isDesignSystemPreview = new URLSearchParams(window.location.search).has('ds-preview');
   const rootStyles = getComputedStyle(document.documentElement);
 
   function readCssNumber(name, fallback) {
@@ -71,12 +72,16 @@
     maximumTotalDuration: readCssNumber('--viewport-reveal-duration-max', 1800),
     threshold: readCssNumber('--viewport-reveal-threshold', 0.15)
   });
+  const viewportTopFade = Object.freeze({
+    startY: readCssNumber('--content-fade-out-start-y', 80),
+    endY: readCssNumber('--content-fade-out-end-y', 0)
+  });
   const menuMotion = Object.freeze({
     duration: readCssNumber('--duration-spring', 380),
     easing: readCssValue('--easing-flip', 'cubic-bezier(0.32, 0.72, 0, 1)')
   });
   const expandedChipLayoutMotion = Object.freeze({
-    duration: readCssNumber('--duration-chip-layout-shift', 220),
+    duration: readCssNumber('--duration-chip-layout-shift', 280),
     easing: readCssValue('--easing-default', 'cubic-bezier(0.2, 0.8, 0.2, 1)')
   });
 
@@ -98,6 +103,59 @@
   const menuLeetTimingScale = readCssNumber('--menu-leet-timing-scale', 0.75);
   const firstPageTextStartDelay = readCssNumber('--page-first-load-delay', 400);
   const shellIntroDuration = readCssNumber('--shell-intro-duration', 900);
+  const assistantAvatarCascadeDelay = readCssNumber('--assistant-avatar-cascade-delay', 100);
+  const messageFollowupCascadeDelay = readCssNumber('--message-followup-cascade-delay', 100);
+
+  function setupViewportTopFade() {
+    const selector = [
+      '.screen :is(.h1, .lede, .answer) .leet-word',
+      '.screen[data-page-layout="hero"] .page-logo--mobile',
+      '.screen [data-viewport-fade]',
+      '.screen .message-actions',
+      '.screen .suggestion',
+      '.screen .project-card'
+    ].join(', ');
+    let targets = [];
+    let frame = null;
+
+    const refreshTargets = () => {
+      targets = [...document.querySelectorAll(selector)];
+    };
+
+    const render = () => {
+      frame = null;
+      const distance = Math.max(1, viewportTopFade.startY - viewportTopFade.endY);
+      targets.forEach(element => {
+        if (!element.getClientRects().length) return;
+        const top = element.getBoundingClientRect().top;
+        const opacity = Math.max(
+          0,
+          Math.min(1, (top - viewportTopFade.endY) / distance)
+        );
+        element.style.setProperty('--content-viewport-top-opacity', opacity.toFixed(4));
+      });
+    };
+
+    const schedule = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(render);
+    };
+
+    refreshTargets();
+    schedule();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    new MutationObserver(() => {
+      refreshTargets();
+      schedule();
+    }).observe(body, {
+      attributes: true,
+      attributeFilter: ['data-screen'],
+      childList: true,
+      subtree: true
+    });
+  }
+
   function clearMenuTimers() {
     menuTimers.forEach(id => clearTimeout(id));
     menuTimers.clear();
@@ -899,6 +957,8 @@
     z: ['2', '5'],
     ',': ['‘'],
     "'": [','],
+    '/': ['\\'],
+    ':': [';'],
     '!': ['i'],
     '.': ['°'],
     '?': ['2']
@@ -945,6 +1005,7 @@
     const LINE_CORRECTION_DELAY = readCssNumber('--leet-line-correction-delay', 260);
     const LINE_CORRECTION_STEP = readCssNumber('--leet-line-correction-step', 16);
     const HIDE_STEP = readCssNumber('--leet-hide-step', 18);
+    const growsFromEmpty = Boolean(el.closest('[data-leet-grow="intrinsic"]'));
     const suggestionRow = el.closest('.suggestion');
     if (suggestionRow) {
       const siblingSuggestions = [...suggestionRow.parentElement.children]
@@ -952,10 +1013,10 @@
       const suggestionIndex = Math.max(0, siblingSuggestions.indexOf(suggestionRow));
       const cascadeStep = parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue('--suggestion-line-cascade-step')
-      ) || 0;
+      ) || 100;
       const iconCascadeStep = parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue('--suggestion-icon-cascade-step')
-      ) || 0;
+      ) || 120;
       suggestionRow.style.setProperty(
         '--suggestion-line-end-delay',
         `${(suggestionIndex + 1) * cascadeStep}ms`
@@ -1078,7 +1139,7 @@
       span.textContent = mode === 'leet' ? span.dataset.leet : span.dataset.char;
     }
 
-    function prepareHidden({ reserveSpace = true } = {}) {
+    function prepareHidden({ reserveSpace = !growsFromEmpty } = {}) {
       clearTimers();
       clearAccentTimers();
       isHiding = false;
@@ -1099,7 +1160,7 @@
       });
     }
 
-    function playIn({ growFromEmpty = false, timingScale = 1, correctionAfterWrite = false, deferCorrection = false, onType, onCorrect } = {}) {
+    function playIn({ growFromEmpty = growsFromEmpty, timingScale = 1, correctionAfterWrite = false, deferCorrection = false, onType, onCorrect } = {}) {
       clearTimers();
       clearAccentTimers();
       const operation = createOperation();
@@ -1456,9 +1517,7 @@
     }
 
     const fullRolloverTarget = el.closest('.suggestion');
-    const groupedRolloverTarget = el.closest(
-      '.chatbox__options[data-state="expanded"] .chat-bubble'
-    );
+    const groupedRolloverTarget = el.closest('.chat-bubble');
     if (fullRolloverTarget) {
       fullRolloverTarget.addEventListener('pointerenter', replayAllLeet);
     } else if (!groupedRolloverTarget) {
@@ -1518,7 +1577,7 @@
   const bubbleHoverWriteStep = readCssNumber('--leet-hover-write-step', 10);
   const bubbleHoverDelay = readCssNumber('--leet-hover-delay', 70);
   const bubbleHoverCorrectionStep = readCssNumber('--leet-hover-correction-step', 10);
-  document.querySelectorAll(".chatbox__options[data-state='expanded'] .chat-bubble").forEach(bubble => {
+  document.querySelectorAll('.chat-bubble').forEach(bubble => {
     const effects = [...bubble.querySelectorAll('.chip__copy > [data-leet-text]')]
       .map(element => leetTextByElement.get(element))
       .filter(Boolean);
@@ -1850,7 +1909,9 @@
 
   function revealMessageActions(effect) {
     const context = getMessageActionContext(effect);
-    if (context) context.messageActions.dataset.messageActionsState = 'visible';
+    if (!context) return false;
+    context.messageActions.dataset.messageActionsState = 'visible';
+    return true;
   }
 
   function syncMessageActionCorrection(effect, index, characterCount) {
@@ -1870,6 +1931,11 @@
 
   function runLeetTimingPlan(screenName, timingPlan, sequenceVersion) {
     const foldTarget = getSequenceFoldTarget(timingPlan);
+    const activeScreen = screensByName.get(screenName);
+    const assistantAvatar = activeScreen?.querySelector('[data-assistant-avatar]');
+    const finalHeaderEffect = timingPlan.items
+      .filter(item => item.effect.el.closest('.top-bar--conversation'))
+      .at(-1)?.effect;
     const foldReached = createDeferred();
     const writeStates = new Map(
       timingPlan.items.map(item => [item.effect, createDeferred()])
@@ -1909,7 +1975,18 @@
           completed = false;
           break;
         }
-        revealMessageActions(item.effect);
+        if (item.effect === finalHeaderEffect && assistantAvatar) {
+          assistantAvatar.dataset.assistantAvatarState = 'visible';
+          await new Promise(resolve => {
+            window.setTimeout(resolve, assistantAvatarCascadeDelay);
+          });
+        }
+        const revealedMessageActions = revealMessageActions(item.effect);
+        if (revealedMessageActions) {
+          await new Promise(resolve => {
+            window.setTimeout(resolve, messageFollowupCascadeDelay);
+          });
+        }
       }
       settlePendingWrites(false);
       foldReached.resolve(completed);
@@ -2088,6 +2165,8 @@
     invalidatePageSequences();
     const activeEffects = [];
     const activeScreen = screensByName.get(screenName);
+    const assistantAvatar = activeScreen?.querySelector('[data-assistant-avatar]');
+    if (assistantAvatar) assistantAvatar.dataset.assistantAvatarState = 'hidden';
     const sequenceVersion = pageSequenceVersion;
     viewportRevealIsBlocked = true;
     const viewportGroups = setupViewportReveals(screenName);
@@ -2113,6 +2192,7 @@
     });
 
     if (!activeEffects.length) {
+      if (assistantAvatar) assistantAvatar.dataset.assistantAvatarState = 'visible';
       releaseViewportRevealQueue(screenName);
       return null;
     }
@@ -2138,6 +2218,7 @@
   }
 
   function consumeToken(amount = 1) {
+    if (isDesignSystemPreview) return;
     tokenCounter?.spend(Number.isFinite(amount) ? amount : 1);
   }
 
@@ -2263,6 +2344,7 @@
 
   tokenCounter = createTokenCounter(document.querySelector('[data-token-counter]'));
   shellIntro = createShellIntro();
+  setupViewportTopFade();
 
   requestAnimationFrame(() => {
     leetTexts

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f0f0f0" />
+  <title>Design System - Leo Cabannes</title>
+  <meta name="description" content="Atomic design system, tokens, components and interaction patterns for Leo Cabannes' portfolio." />
+  <link rel="icon" type="image/svg+xml" href="../assets/logo.svg" />
+  <link rel="stylesheet" href="../tokens.css?v=141" />
+  <link rel="stylesheet" href="../styles.css?v=212" />
+  <link rel="stylesheet" href="design-system.css?v=4" />
+</head>
+<body class="ds-page">
+  <a class="ds-skip-link" href="#ds-main">Skip to content</a>
+
+  <svg width="0" height="0" class="ds-svg-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="ds-i-corner-down-right" viewBox="0 0 24 24">
+        <path d="M6 7v4a3 3 0 0 0 3 3h9m0 0-4-4m4 4-4 4" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="ds-i-chevron-left" viewBox="0 0 24 24">
+        <path d="m15 6-6 6 6 6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="ds-i-plus" viewBox="0 0 24 24">
+        <path d="M12.5 11.5H18V12.5H12.5V18H11.5V12.5H6V11.5H11.5V6H12.5V11.5Z" fill="currentColor"/>
+      </symbol>
+      <symbol id="ds-i-share" viewBox="0 0 24 24">
+        <path d="M13 6.5H17.5V11" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 6.5H8.5C7.39543 6.5 6.5 7.39543 6.5 8.5V15.5C6.5 16.6046 7.39543 17.5 8.5 17.5H15.5C16.6046 17.5 17.5 16.6046 17.5 15.5V14" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        <path d="M17.5 6.5L12 12" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="ds-i-like" viewBox="0 0 24 24">
+        <path d="M6.5 10.5C6.5 9.94772 6.94772 9.5 7.5 9.5H8C8.55228 9.5 9 9.94772 9 10.5V16.5C9 17.0523 8.55228 17.5 8 17.5H7.5C6.94772 17.5 6.5 17.0523 6.5 16.5V10.5Z" fill="none" stroke="currentColor" stroke-width="1"/>
+        <path d="M12.2802 5.15761L9.20214 9.23261C9.07102 9.40619 9.00009 9.61778 9.00008 9.83531L8.99993 16.5C8.99992 17.0523 9.44764 17.5 9.99993 17.5L13.6576 17.5C15.0342 17.5 16.2341 16.5631 16.568 15.2276L17.3786 11.9851C17.6942 10.7228 16.7395 9.49999 15.4384 9.49999L12.9999 9.49999L13.6303 8.55852C14.4242 7.37281 14.0497 5.76283 12.8139 5.04934C12.6342 4.94558 12.4053 4.99201 12.2802 5.15761Z" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="ds-utility">
+    <div class="ds-utility__brand">
+      <img src="../assets/logo.svg" alt="" />
+      <div>
+        <strong>LKC Design System</strong>
+        <span>Atomic reference / Pico 11.4</span>
+      </div>
+    </div>
+    <div class="ds-utility__meta">
+      <span class="ds-status"><span aria-hidden="true"></span>Live</span>
+      <a href="../index.html">Back to portfolio</a>
+    </div>
+  </header>
+
+  <div class="ds-layout">
+    <aside class="ds-sidebar" aria-label="Design system navigation">
+      <label class="ds-search">
+        <span>Search system</span>
+        <input type="search" placeholder="Token or component" data-ds-search />
+      </label>
+
+      <details class="ds-nav-disclosure" open>
+        <summary>Browse</summary>
+        <nav class="ds-nav">
+          <a href="#overview">Overview</a>
+          <a href="#foundations">Foundations</a>
+          <a href="#atoms">Atoms</a>
+          <a href="#molecules">Molecules</a>
+          <a href="#organisms">Organisms</a>
+          <a href="#templates">Templates</a>
+          <a href="#pages">Pages</a>
+        </nav>
+      </details>
+
+      <div class="ds-sidebar__stats" aria-live="polite">
+        <span><strong data-token-count>0</strong> tokens</span>
+        <span><strong data-component-count>0</strong> specimens</span>
+      </div>
+    </aside>
+
+    <main id="ds-main" class="ds-main">
+      <section id="overview" class="ds-section ds-overview" data-searchable="overview principles atomic reference">
+        <p class="ds-eyebrow">System reference</p>
+        <h1>One source of truth for the portfolio experience.</h1>
+        <p class="ds-intro">Foundations, reusable components and page patterns are documented here with their real tokens, states and responsive behavior.</p>
+        <div class="ds-overview__metrics">
+          <span><strong data-token-count>0</strong> live tokens</span>
+          <span><strong data-component-count>0</strong> component specimens</span>
+          <span>5 atomic levels</span>
+        </div>
+      </section>
+
+      <section id="foundations" class="ds-section" data-searchable="foundations tokens color typography spacing radius shadow motion layout">
+        <header class="ds-section__header">
+          <div><p class="ds-eyebrow">Foundations</p><h2>Design tokens</h2></div>
+          <p>Every custom property is read directly from <code>tokens.css</code>. Select a row to copy its token name.</p>
+        </header>
+        <div class="ds-token-groups" data-token-groups aria-live="polite"></div>
+        <p class="ds-empty" data-token-error hidden>Token rules could not be read. Open this page through the local server or GitHub Pages.</p>
+      </section>
+
+      <section id="atoms" class="ds-section" data-atomic-section="atoms">
+        <header class="ds-section__header">
+          <div><p class="ds-eyebrow">Atomic Design / 01</p><h2>Atoms</h2></div>
+          <p>Small, indivisible controls and visual primitives.</p>
+        </header>
+        <div class="ds-specimens">
+          <article class="ds-specimen" data-component="Logo" data-searchable="atom logo brand mark small large">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Logo</h3></div><code>.logo</code></div>
+            <div class="ds-preview ds-preview--row">
+              <a class="logo logo-sm" href="../index.html" aria-label="Small logo"><img src="../assets/logo.svg" alt="" /></a>
+              <a class="logo logo-lg" href="../index.html" aria-label="Large logo"><img src="../assets/logo.svg" alt="" /></a>
+            </div>
+            <p class="ds-spec">Small and large brand marks built from the shared spacing scale.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Icons" data-searchable="atom icons arrow plus share like dislike">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Icons</h3></div><code>svg use</code></div>
+            <div class="ds-preview ds-preview--icons" aria-label="Icon set">
+              <span><svg><use href="#ds-i-chevron-left"/></svg><small>Back</small></span>
+              <span><svg><use href="#ds-i-corner-down-right"/></svg><small>Prompt</small></span>
+              <span><svg><use href="#ds-i-plus"/></svg><small>Plus</small></span>
+              <span><svg><use href="#ds-i-share"/></svg><small>Share</small></span>
+              <span><svg><use href="#ds-i-like"/></svg><small>Like</small></span>
+            </div>
+            <p class="ds-spec">Stroke icons use <code>--stroke-thin</code> and inherit <code>currentColor</code>.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Typography" data-searchable="atom typography type scale heading paragraph identity label">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Typography</h3></div><code>type tokens</code></div>
+            <div class="ds-preview ds-preview--type">
+              <span class="ds-type ds-type--display">Human-centered design</span>
+              <span class="ds-type ds-type--body">Generated response paragraph</span>
+              <span class="ds-type ds-type--label">TOKENS LEFT / PICO 11.4</span>
+            </div>
+            <p class="ds-spec">The SF Mono scale covers display, message and interface roles.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Back Button" data-searchable="atom back button glass navigation">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Back Button</h3></div><code>.back-button</code></div>
+            <div class="ds-preview ds-preview--row">
+              <button class="back-button" type="button" data-ds-static aria-label="Back button specimen"><svg class="back-button__icon" aria-hidden="true"><use href="#ds-i-chevron-left"/></svg></button>
+              <span class="ds-state-label">Hover and press the live control</span>
+            </div>
+            <p class="ds-spec">Shared glass shell, fixed geometry and browser-history behavior.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Chips" data-searchable="atom chip small green selected current">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Chips</h3></div><code>.chip</code></div>
+            <div class="ds-preview ds-preview--row">
+              <button class="chip chip--sm" type="button">about</button>
+              <button class="chip chip--sm" type="button" aria-current="page">work</button>
+              <button class="chip chip--sm" type="button">design system</button>
+            </div>
+            <p class="ds-spec">Compact navigation chips with current, hover and pressed states.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Menu Button" data-searchable="atom menu button plus close">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Menu Button</h3></div><code>.menu-btn</code></div>
+            <div class="ds-preview ds-preview--row">
+              <button class="menu-btn ds-menu-button" type="button" aria-label="Menu toggle specimen"><span class="menu-btn__icon"><svg aria-hidden="true"><use href="#ds-i-plus"/></svg></span></button>
+              <button class="menu-btn ds-menu-button ds-menu-button--open" type="button"><span class="menu-btn__label">close</span><span class="menu-btn__icon"><svg aria-hidden="true"><use href="#ds-i-plus"/></svg></span></button>
+            </div>
+            <p class="ds-spec">Closed 32px control and 76px expanded control.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Message Action" data-searchable="atom message action share like dislike">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Message Action</h3></div><code>.message-action</code></div>
+            <div class="ds-preview ds-preview--row">
+              <button class="message-action" data-message-action-corrected="true" type="button" aria-label="Share"><svg><use href="#ds-i-share"/></svg></button>
+              <button class="message-action" data-message-action-corrected="true" type="button" aria-label="Like"><svg><use href="#ds-i-like"/></svg></button>
+              <button class="message-action message-action--dislike" data-message-action-corrected="true" type="button" aria-label="Dislike"><svg><use href="#ds-i-like"/></svg></button>
+            </div>
+            <p class="ds-spec">24px icon controls with subtle hover and press feedback.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Progress Tag" data-searchable="atom project progress tag loading done">
+            <div class="ds-specimen__heading"><div><span>Atom</span><h3>Progress Tag</h3></div><code>.project-card__tag</code></div>
+            <div class="ds-preview ds-preview--row">
+              <span class="project-card__tag ds-project-tag"><span class="project-card__tag-progress"><span>60</span><span>%</span></span><span class="project-card__tag-done">DONE!</span></span>
+              <span class="project-card__tag ds-project-tag" data-pixel-progress-state="done"><span class="project-card__tag-progress"><span>100</span><span>%</span></span><span class="project-card__tag-done">DONE!</span></span>
+            </div>
+            <p class="ds-spec">Image-generation progress and completion states.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="molecules" class="ds-section" data-atomic-section="molecules">
+        <header class="ds-section__header"><div><p class="ds-eyebrow">Atomic Design / 02</p><h2>Molecules</h2></div><p>Small groups of atoms with one clear job.</p></header>
+        <div class="ds-specimens">
+          <article class="ds-specimen" data-component="Site Identity" data-searchable="molecule identity leo kaj cabannes pico">
+            <div class="ds-specimen__heading"><div><span>Molecule</span><h3>Site Identity</h3></div><code>.site-identity</code></div>
+            <div class="ds-preview"><div class="site-identity ds-site-identity"><span class="site-identity__name">Leo Kaj Cabannes</span><button class="site-identity__version" type="button">Pico 11.4</button></div></div>
+            <p class="ds-spec">Name and version control using the shared identity typography.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Token Counter" data-searchable="molecule token counter tokens left number">
+            <div class="ds-specimen__heading"><div><span>Molecule</span><h3>Token Counter</h3></div><code>.token-counter</code></div>
+            <div class="ds-preview"><div class="token-counter ds-token-counter"><div class="token-counter__control"><div class="token-counter__stack"><span class="token-counter__label">Tokens left</span><span class="token-counter__value">199.845.210</span></div><span class="token-counter__marker"></span></div></div></div>
+            <p class="ds-spec">Persistent experience counter. Static in this documentation.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Chat Bubble" data-searchable="molecule chat bubble prompt selected prefix label suffix">
+            <div class="ds-specimen__heading"><div><span>Molecule</span><h3>Chat Bubble</h3></div><code>.chat-bubble</code></div>
+            <div class="ds-preview ds-preview--stack">
+              <button class="chat-bubble chip chip--bg" type="button"><span class="chip__copy"><span class="chip__muted">Let me see the</span><span class="chip__keyword">design system</span></span></button>
+              <div class="chat-bubble chat-bubble--selected question-chip"><span class="chip__copy"><span class="chip__muted">Show me your latest</span><span class="chip__keyword">work</span></span></div>
+            </div>
+            <p class="ds-spec">Shared prefix, label and suffix anatomy with intrinsic multiline wrapping.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Message Actions" data-searchable="molecule message actions timestamp share like dislike">
+            <div class="ds-specimen__heading"><div><span>Molecule</span><h3>Message Actions</h3></div><code>.message-actions</code></div>
+            <div class="ds-preview">
+              <div class="message-actions" data-message-actions-state="visible" data-message-actions-corrected="true"><div class="message-actions__buttons"><button class="message-action" data-message-action-corrected="true" type="button" aria-label="Share"><svg><use href="#ds-i-share"/></svg></button><button class="message-action" data-message-action-corrected="true" type="button" aria-label="Like"><svg><use href="#ds-i-like"/></svg></button><button class="message-action message-action--dislike" data-message-action-corrected="true" type="button" aria-label="Dislike"><svg><use href="#ds-i-like"/></svg></button></div><time class="message-actions__time">10:42</time></div>
+            </div>
+            <p class="ds-spec">Always 24px below message content; timestamp follows correction.</p>
+          </article>
+
+          <article class="ds-specimen" data-component="Prompt Suggestion" data-searchable="molecule prompt suggestion arrow row">
+            <div class="ds-specimen__heading"><div><span>Molecule</span><h3>Prompt Suggestion</h3></div><code>.suggestion</code></div>
+            <div class="ds-preview ds-preview--suggestion"><button class="suggestion" data-suggestion-state="visible" data-suggestion-icon-corrected="true" type="button"><svg class="suggestion__icon"><use href="#ds-i-corner-down-right"/></svg><span>Tell me more about yourself</span></button></div>
+            <p class="ds-spec">Full-width prompt row with line reveal, arrow cascade and Leet replay.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="organisms" class="ds-section" data-atomic-section="organisms">
+        <header class="ds-section__header"><div><p class="ds-eyebrow">Atomic Design / 03</p><h2>Organisms</h2></div><p>Complete reusable interface regions.</p></header>
+        <div class="ds-specimens">
+          <article class="ds-specimen ds-specimen--wide" data-component="Conversation Header" data-searchable="organism conversation header back chat bubble">
+            <div class="ds-specimen__heading"><div><span>Organism</span><h3>Conversation Header</h3></div><code>.top-bar--conversation</code></div>
+            <div class="ds-preview"><header class="top-bar top-bar--conversation ds-conversation-header"><button class="back-button" type="button" aria-label="Back"><svg class="back-button__icon"><use href="#ds-i-chevron-left"/></svg></button><div class="chat-bubble chat-bubble--selected question-chip"><span class="chip__copy"><span class="chip__muted">Let me see your latest</span><span class="chip__keyword">work</span></span></div></header></div>
+            <p class="ds-spec">Fixed Back atom left; intrinsic question bubble grows from right to left.</p>
+          </article>
+
+          <article class="ds-specimen ds-specimen--wide" data-component="Message" data-searchable="organism message body actions answer">
+            <div class="ds-specimen__heading"><div><span>Organism</span><h3>Message</h3></div><code>.message</code></div>
+            <div class="ds-preview ds-preview--message"><div class="message"><div class="message__body answer"><p>A generated response combines structured content with its own reusable action footer.</p><p>Paragraph rhythm remains part of the message body.</p></div><div class="message-actions" data-message-actions-state="visible" data-message-actions-corrected="true"><div class="message-actions__buttons"><button class="message-action" data-message-action-corrected="true" type="button" aria-label="Share"><svg><use href="#ds-i-share"/></svg></button><button class="message-action" data-message-action-corrected="true" type="button" aria-label="Like"><svg><use href="#ds-i-like"/></svg></button><button class="message-action message-action--dislike" data-message-action-corrected="true" type="button" aria-label="Dislike"><svg><use href="#ds-i-like"/></svg></button></div><time class="message-actions__time">10:42</time></div></div></div>
+            <p class="ds-spec">Body, incremental reveal and Message Actions are scoped to one response.</p>
+          </article>
+
+          <article class="ds-specimen ds-specimen--wide" data-component="Prompt Suggestions" data-searchable="organism prompt suggestions dive deeper list">
+            <div class="ds-specimen__heading"><div><span>Organism</span><h3>Prompt Suggestions</h3></div><code>.suggestions</code></div>
+            <div class="ds-preview ds-preview--suggestion"><div class="suggestions"><p class="suggestions__title">Dive deeper</p><button class="suggestion" data-suggestion-state="visible" data-suggestion-icon-corrected="true" type="button"><svg class="suggestion__icon"><use href="#ds-i-corner-down-right"/></svg><span>Tell me more about yourself</span></button><button class="suggestion" data-suggestion-state="visible" data-suggestion-icon-corrected="true" type="button"><svg class="suggestion__icon"><use href="#ds-i-corner-down-right"/></svg><span>Show me your latest work</span></button></div></div>
+            <p class="ds-spec">The title sits 12px above rows; the organism sits 40px below Message Actions.</p>
+          </article>
+
+          <article class="ds-specimen ds-specimen--wide" data-component="Project Cards" data-searchable="organism project cards grid image progress small medium large split">
+            <div class="ds-specimen__heading"><div><span>Organism</span><h3>Project Cards</h3></div><code>.project-card</code></div>
+            <div class="ds-preview ds-preview--projects"><div class="project-grid"><article class="project-card project-card--sm"><img src="../assets/carrefour.png" alt="" /><h4 class="project-card__title">Carrefour Links</h4></article><article class="project-card project-card--sm"><img src="../assets/amundi.png" alt="" /><h4 class="project-card__title">Amundi</h4></article><article class="project-card project-card--md project-card--split"><h4 class="project-card__title project-card__title--dark">AI-assisted inspiration</h4><span class="project-card__image"><img src="../assets/perfumers.png" alt="" /></span></article></div></div>
+            <p class="ds-spec">Small, medium, large and split variants share image reveal and progress behavior.</p>
+          </article>
+
+          <article class="ds-specimen ds-specimen--wide" data-component="Topbar and Chatbox" data-searchable="organism topbar chatbox shell menu open close live">
+            <div class="ds-specimen__heading"><div><span>Organism</span><h3>Topbar + Chatbox</h3></div><code>Live shell</code></div>
+            <div class="ds-frame-toolbar" data-frame-controls="shell-preview"><span>Interactive preview</span><div><button type="button" data-frame-size="desktop" aria-pressed="true">Desktop</button><button type="button" data-frame-size="mobile" aria-pressed="false">Mobile</button></div></div>
+            <div class="ds-live-frame" id="shell-preview"><iframe src="../index.html?ds-preview=1#home" title="Interactive topbar and chatbox preview" loading="lazy"></iframe></div>
+            <p class="ds-spec">The preview uses the production shell and interactions with token spending disabled.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="templates" class="ds-section" data-atomic-section="templates">
+        <header class="ds-section__header"><div><p class="ds-eyebrow">Atomic Design / 04</p><h2>Templates</h2></div><p>Layout contracts before page-specific content.</p></header>
+        <div class="ds-template-grid">
+          <article class="ds-template" data-component="Home Hero Template" data-searchable="template home hero logo title message suggestions"><h3>Home Hero</h3><div class="ds-template-map"><span>Topbar</span><strong>Logo + Title</strong><span>Message</span><span>Message Actions</span><span>Prompt Suggestions</span><em>Chatbox</em></div><p>Hero content starts 112px below the shell topbar.</p></article>
+          <article class="ds-template" data-component="Conversation Template" data-searchable="template conversation subpage back bubble message"><h3>Conversation Subpage</h3><div class="ds-template-map"><span>Topbar</span><strong>Back + User Prompt</strong><span>Assistant + Message</span><span>Message Actions</span><span>Prompt Suggestions</span><em>Chatbox</em></div><p>Shared structure for every page outside Home.</p></article>
+        </div>
+      </section>
+
+      <section id="pages" class="ds-section" data-atomic-section="pages">
+        <header class="ds-section__header"><div><p class="ds-eyebrow">Atomic Design / 05</p><h2>Pages</h2></div><p>Production compositions with real content and behavior.</p></header>
+        <div class="ds-page-previews">
+          <article class="ds-page-preview" data-component="Home Page" data-searchable="page home production preview"><div class="ds-frame-toolbar" data-frame-controls="home-preview"><div><strong>Home</strong><a href="../index.html#home">Open page</a></div><div><button type="button" data-frame-size="desktop" aria-pressed="true">Desktop</button><button type="button" data-frame-size="mobile" aria-pressed="false">Mobile</button></div></div><div class="ds-live-frame" id="home-preview"><iframe src="../index.html?ds-preview=1#home" title="Home page preview" loading="lazy"></iframe></div></article>
+          <article class="ds-page-preview" data-component="Work Page" data-searchable="page work production preview"><div class="ds-frame-toolbar" data-frame-controls="work-preview"><div><strong>Work</strong><a href="../work/">Open page</a></div><div><button type="button" data-frame-size="desktop" aria-pressed="true">Desktop</button><button type="button" data-frame-size="mobile" aria-pressed="false">Mobile</button></div></div><div class="ds-live-frame" id="work-preview"><iframe src="../work/index.html?ds-preview=1" title="Work page preview" loading="lazy"></iframe></div></article>
+        </div>
+      </section>
+
+      <p class="ds-no-results" data-no-results hidden>No tokens or components match this search.</p>
+    </main>
+  </div>
+
+  <div class="ds-toast" data-ds-toast role="status" aria-live="polite"></div>
+  <script src="design-system.js?v=3"></script>
+</body>
+</html>
