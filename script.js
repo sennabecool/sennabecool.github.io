@@ -45,8 +45,10 @@
   let viewportRevealIsPlaying = false;
   let viewportRevealIsBlocked = false;
   let viewportRevealScreenName = '';
-  let viewportRevealInitialEffects = new Set();
   let pageSequenceVersion = 0;
+  const prefersReducedMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
   const pageLeetTimingPlans = new Map();
   const pageLeetTiming = Object.freeze({
     minimumTotalDuration: readCssNumber('--page-intro-duration-min', 1200),
@@ -72,6 +74,14 @@
     maximumTotalDuration: readCssNumber('--viewport-reveal-duration-max', 1800),
     threshold: readCssNumber('--viewport-reveal-threshold', 0.15)
   });
+  const projectCardRevealDuration = readCssNumber(
+    '--project-card-reveal-duration',
+    480
+  );
+  const projectCardRevealStagger = readCssNumber(
+    '--project-card-reveal-stagger',
+    120
+  );
   const viewportTopFade = Object.freeze({
     startY: readCssNumber('--content-fade-out-start-y', 80),
     endY: readCssNumber('--content-fade-out-end-y', 0)
@@ -1853,7 +1863,10 @@
     getEffectOwners(effects, '.suggestion').forEach(suggestion => {
       delete suggestion.dataset.suggestionIconCorrected;
     });
-    getEffectOwners(effects, '[data-message]').forEach(message => {
+    const finalMessageEffects = effects.filter(effect => (
+      getMessageActionContext(effect)
+    ));
+    getEffectOwners(finalMessageEffects, '[data-message]').forEach(message => {
       const messageActions = message.querySelector('[data-message-actions]');
       if (!messageActions) return;
       messageActions.dataset.messageActionsState = 'hidden';
@@ -1960,7 +1973,15 @@
 
   function completeMessageActionCorrection(effect) {
     const context = getMessageActionContext(effect);
-    if (context) context.messageActions.dataset.messageActionsCorrected = 'true';
+    if (!context) return;
+    const timestamp = context.messageActions.querySelector(
+      '[data-message-generated-at]'
+    );
+    const timestampEffect = contentLeetTexts.find(candidate => (
+      candidate.el === timestamp
+    ));
+    timestampEffect?.showPlain();
+    context.messageActions.dataset.messageActionsCorrected = 'true';
   }
 
   function runLeetTimingPlan(screenName, timingPlan, sequenceVersion) {
@@ -2086,10 +2107,7 @@
 
   function getViewportRevealEffects(group) {
     return contentLeetTexts.filter(
-      effect => (
-        effect.el.closest('[data-reveal-on-scroll]') === group
-        && !viewportRevealInitialEffects.has(effect)
-      )
+      effect => effect.el.closest('[data-reveal-on-scroll]') === group
     );
   }
 
@@ -2112,36 +2130,46 @@
       || viewportRevealScreenName !== screenName
       || body.dataset.screen !== screenName || !viewportRevealQueue.length) return;
     viewportRevealIsPlaying = true;
-    const activeScreen = screensByName.get(screenName);
-    const groups = viewportRevealQueue
-      .splice(0)
-      .sort(compareDocumentOrder);
-    groups.forEach(group => {
-      group.dataset.revealState = 'revealing';
-    });
-    const effects = groups.flatMap(getViewportRevealEffects);
-    const sequence = playLeetSequence(screenName, effects, {
-      scope: activeScreen,
-      timingSource: groups.length === 1 ? groups[0] : activeScreen,
-      minimumTotalDuration: viewportRevealTiming.minimumTotalDuration,
-      maximumTotalDuration: viewportRevealTiming.maximumTotalDuration
-    });
+    const sequenceVersion = pageSequenceVersion;
+    const group = viewportRevealQueue.shift();
+    group.dataset.revealState = 'revealing';
+    globalThis.portfolioProjectImages?.start(group);
+    const effects = getViewportRevealEffects(group);
 
-    const completeBatch = () => {
-      if (body.dataset.screen !== screenName) return;
-      groups.forEach(group => {
-        group.dataset.revealState = 'revealed';
-      });
+    const completeGroup = () => {
+      if (!isPageSequenceActive(screenName, sequenceVersion)) return;
+      group.dataset.revealState = 'revealed';
       viewportRevealIsPlaying = false;
       processViewportRevealQueue(screenName);
     };
 
+    if (group.matches('.project-card')) {
+      effects.forEach(effect => effect.showPlain());
+      window.setTimeout(() => {
+        if (!isPageSequenceActive(screenName, sequenceVersion)) return;
+        group.dataset.revealState = 'revealed';
+      }, projectCardRevealDuration);
+      window.setTimeout(() => {
+        if (!isPageSequenceActive(screenName, sequenceVersion)) return;
+        viewportRevealIsPlaying = false;
+        processViewportRevealQueue(screenName);
+      }, projectCardRevealStagger);
+      return;
+    }
+
+    const sequence = playLeetSequence(screenName, effects, {
+      scope: group,
+      timingSource: group,
+      minimumTotalDuration: viewportRevealTiming.minimumTotalDuration,
+      maximumTotalDuration: viewportRevealTiming.maximumTotalDuration
+    });
+
     if (!sequence) {
-      completeBatch();
+      completeGroup();
       return;
     }
     sequence.completed.then(completed => {
-      if (completed) completeBatch();
+      if (completed) completeGroup();
     });
   }
 
@@ -2164,7 +2192,6 @@
     viewportRevealQueue = [];
     viewportRevealIsPlaying = false;
     viewportRevealScreenName = screenName;
-    viewportRevealInitialEffects = new Set();
     const activeScreen = screensByName.get(screenName);
     const groups = activeScreen
       ? [...activeScreen.querySelectorAll('[data-reveal-on-scroll]')]
@@ -2177,7 +2204,7 @@
     });
     if (!groups.length) return new Set();
 
-    if (!('IntersectionObserver' in window)) {
+    if (typeof IntersectionObserver !== 'function') {
       enqueueViewportRevealGroups(groups, screenName);
       return new Set(groups);
     }
@@ -2186,7 +2213,42 @@
       const visibleGroups = entries
         .filter(entry => entry.isIntersecting)
         .map(entry => entry.target);
-      enqueueViewportRevealGroups(visibleGroups, screenName);
+      if (!visibleGroups.length) return;
+      const visibleProjectCards = visibleGroups.filter(
+        group => group.matches('.project-card')
+      );
+      const projectCardGroups = groups.filter(
+        group => group.matches('.project-card')
+      );
+      const furthestVisibleCardTop = Math.max(
+        -Infinity,
+        ...visibleProjectCards.map(card => Math.round(
+          card.getBoundingClientRect().top
+        ))
+      );
+      const projectCardRowTops = [...new Set(projectCardGroups.map(card => (
+        Math.round(card.getBoundingClientRect().top)
+      )))].sort((first, second) => first - second);
+      const nextProjectCardRowTop = projectCardRowTops.find(
+        top => top > furthestVisibleCardTop + 1
+      );
+      const cardLookahead = Number.isFinite(nextProjectCardRowTop)
+        ? projectCardGroups.filter(card => (
+          Math.round(card.getBoundingClientRect().top)
+            <= nextProjectCardRowTop + 1
+        ))
+        : [];
+      const revealCandidates = [...new Set([
+        ...visibleGroups,
+        ...cardLookahead
+      ])];
+      const furthestVisibleIndex = Math.max(
+        ...revealCandidates.map(group => groups.indexOf(group))
+      );
+      enqueueViewportRevealGroups(
+        groups.slice(0, furthestVisibleIndex + 1),
+        screenName
+      );
     }, {
       threshold: viewportRevealTiming.threshold,
       rootMargin: getViewportRevealRootMargin()
@@ -2201,10 +2263,38 @@
     const activeScreen = screensByName.get(screenName);
     const assistantAvatar = activeScreen?.querySelector('[data-assistant-avatar]');
     if (assistantAvatar) assistantAvatar.dataset.assistantAvatarState = 'hidden';
+    if (prefersReducedMotion) {
+      viewportRevealObserver?.disconnect();
+      viewportRevealObserver = null;
+      viewportRevealQueue = [];
+      viewportRevealIsPlaying = false;
+      viewportRevealIsBlocked = false;
+      viewportRevealScreenName = screenName;
+      contentLeetTexts.forEach(effect => {
+        const screen = effect.el.closest('.screen');
+        if (screen?.dataset.screenName === screenName) effect.showPlain();
+        else effect.prepareHidden();
+      });
+      activeScreen?.querySelectorAll('[data-reveal-on-scroll]').forEach(group => {
+        group.dataset.revealState = 'revealed';
+      });
+      activeScreen?.querySelectorAll('[data-message-actions]').forEach(actions => {
+        actions.dataset.messageActionsState = 'visible';
+        actions.dataset.messageActionsCorrected = 'true';
+        actions.querySelectorAll('.message-action').forEach(action => {
+          action.dataset.messageActionCorrected = 'true';
+        });
+      });
+      activeScreen?.querySelectorAll('[data-suggestion-state]').forEach(suggestion => {
+        suggestion.dataset.suggestionState = 'appearing';
+        suggestion.dataset.suggestionIconCorrected = 'true';
+      });
+      if (assistantAvatar) assistantAvatar.dataset.assistantAvatarState = 'visible';
+      return null;
+    }
     const sequenceVersion = pageSequenceVersion;
     viewportRevealIsBlocked = true;
     const viewportGroups = setupViewportReveals(screenName);
-    const foldY = getContentGenerationBoundaryY();
 
     contentLeetTexts.forEach(effect => {
       const screen = effect.el.closest('.screen');
@@ -2212,14 +2302,14 @@
         effect.prepareHidden();
         return;
       }
+      if (effect.el.closest('[data-message-actions]')) {
+        effect.prepareHidden();
+        return;
+      }
       const viewportGroup = effect.el.closest('[data-reveal-on-scroll]');
       if (viewportGroup && viewportGroups.has(viewportGroup)) {
-        const isInitiallyAboveFold = effect.getLastCharacterIndexBefore(foldY) >= 0;
-        if (!isInitiallyAboveFold) {
-          effect.prepareHidden();
-          return;
-        }
-        viewportRevealInitialEffects.add(effect);
+        effect.prepareHidden();
+        return;
       }
       effect.prepareHidden();
       activeEffects.push(effect);

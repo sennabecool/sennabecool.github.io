@@ -196,6 +196,9 @@
       this.completionTimer = null;
       this.startTimer = null;
       this.startTime = null;
+      this.startRequested = false;
+      this.useStagger = true;
+      this.hasDrawnPixelImage = false;
       this.started = false;
       this.completed = false;
       this.resizeObserver = null;
@@ -227,21 +230,26 @@
       this.canvas.className = 'project-card__pixel-canvas';
       this.canvas.setAttribute('aria-hidden', 'true');
       this.image.parentElement.appendChild(this.canvas);
-      this.draw(this.currentBlock);
+      this.drawBlack();
       this.image.dataset.pixelState = 'ready';
 
       if (typeof ResizeObserver !== 'undefined') {
         this.resizeObserver = new ResizeObserver(() => {
-          if (this.canvas?.isConnected) this.draw(this.currentBlock);
+          if (!this.canvas?.isConnected) return;
+          if (this.hasDrawnPixelImage) this.draw(this.currentBlock);
+          else this.drawBlack();
         });
         this.resizeObserver.observe(this.image);
       }
 
-      if (startImmediately) {
+      if (startImmediately || this.startRequested) {
         this.start();
-      } else if (intersectionObserver) {
+      } else if (
+        !this.image.closest('[data-reveal-on-scroll]')
+        && intersectionObserver
+      ) {
         intersectionObserver.observe(this.image);
-      } else {
+      } else if (!this.image.closest('[data-reveal-on-scroll]')) {
         this.start();
       }
     }
@@ -403,14 +411,29 @@
       this.canvas.dataset.pixelBlock = String(blockSize);
     }
 
-    start() {
-      if (this.started || !this.canvas) return;
+    drawBlack() {
+      this.draw(this.currentBlock);
+      if (!this.canvas) return;
+      const context = this.canvas.getContext('2d');
+      if (!context) return;
+      context.save();
+      context.fillStyle = '#000';
+      context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      context.restore();
+      this.canvas.dataset.pixelBlock = 'black';
+    }
+
+    start({ stagger = this.useStagger } = {}) {
+      if (this.started) return;
+      this.startRequested = true;
+      this.useStagger = stagger;
+      if (!this.canvas) return;
       this.started = true;
       intersectionObserver?.unobserve(this.image);
       this.startTimer = window.setTimeout(() => {
         this.image.dataset.pixelState = 'revealing';
         this.animationFrame = requestAnimationFrame(time => this.tick(time));
-      }, this.index * config.stagger);
+      }, stagger ? this.index * config.stagger : 0);
     }
 
     tick(time) {
@@ -425,9 +448,15 @@
       );
       this.setProgress(percentage, { charge: true });
 
+      if (!this.hasDrawnPixelImage && percentage > 0) {
+        this.hasDrawnPixelImage = true;
+        this.draw(this.currentBlock);
+      }
+
       if (milestone !== this.currentMilestone) {
         this.currentMilestone = milestone;
         this.currentBlock = this.blocks[milestone];
+        this.hasDrawnPixelImage = true;
         this.draw(this.currentBlock);
       }
 
@@ -481,7 +510,11 @@
 
     root.dataset.projectImageReveal = 'enabled';
 
-    if (!prefersReducedMotion && 'IntersectionObserver' in window && !intersectionObserver) {
+    if (
+      !prefersReducedMotion
+      && typeof IntersectionObserver === 'function'
+      && !intersectionObserver
+    ) {
       intersectionObserver = new IntersectionObserver(entries => {
         entries.forEach(entry => {
           if (!entry.isIntersecting) return;
@@ -508,6 +541,15 @@
     init(scope, options);
   }
 
+  function start(scope = document) {
+    const images = scope.matches?.(selector)
+      ? [scope]
+      : [...scope.querySelectorAll(selector)];
+    images.forEach(image => {
+      effects.get(image)?.start({ stagger: false });
+    });
+  }
+
   setupResponsiveProjectCards();
 
   if (document.readyState === 'loading') {
@@ -516,5 +558,10 @@
     init();
   }
 
-  globalThis.portfolioProjectImages = { init, replay, syncSizes: syncProjectCardSizes };
+  globalThis.portfolioProjectImages = {
+    init,
+    replay,
+    start,
+    syncSizes: syncProjectCardSizes
+  };
 })();
