@@ -26,6 +26,7 @@ img { display: block; max-width: 100%; }
   --project-card-reveal-duration: 480ms;
   --project-card-reveal-stagger: 120ms;
   --project-card-reveal-offset: 12px;
+  --project-image-reveal-delay: 160ms;
   --viewport-reveal-threshold: 0.05;
 }
 
@@ -903,17 +904,16 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
   pointer-events: none;
 }
 
-/* The view timeline handles entry from the bottom. The shared viewport
-   controller supplies whole-element top opacity for text and compact
-   components. Project cards keep full opacity after entry and leave the
-   viewport naturally without a scripted top fade. */
+/* The view timeline supplies top opacity for text and compact components.
+   Project cards use their own scripted entry transition. */
 @supports (animation-timeline: view()) {
+  /* Cards own their entry opacity through data-reveal-state. Keeping them out
+     of this scroll timeline prevents the two opacity animations fighting. */
   .screen :is(.h1, .lede, .answer) .leet-word,
   .screen[data-page-layout="hero"] .page-logo--mobile,
   .screen [data-viewport-fade],
   .screen .message-actions,
-  .screen .suggestion,
-  .screen .project-card {
+  .screen .suggestion {
     animation-name: content-viewport-opacity;
     animation-duration: 1ms;
     animation-timing-function: linear;

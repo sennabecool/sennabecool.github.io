@@ -20,6 +20,7 @@
     durationMin: readCssNumber('--project-image-reveal-duration-min', 2200),
     durationMax: readCssNumber('--project-image-reveal-duration-max', 3000),
     stagger: readCssNumber('--project-image-reveal-stagger', 80),
+    delay: readCssNumber('--project-image-reveal-delay', 160),
     startBlock: readCssNumber('--project-image-reveal-start-block', 32),
     milestones: readCssNumber('--project-image-reveal-milestones', 5),
     paceSegments: readCssNumber('--project-image-reveal-pace-segments', 9),
@@ -433,7 +434,7 @@
       this.startTimer = window.setTimeout(() => {
         this.image.dataset.pixelState = 'revealing';
         this.animationFrame = requestAnimationFrame(time => this.tick(time));
-      }, stagger ? this.index * config.stagger : 0);
+      }, config.delay + (stagger ? this.index * config.stagger : 0));
     }
 
     tick(time) {
