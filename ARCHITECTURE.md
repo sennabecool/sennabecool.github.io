@@ -295,13 +295,22 @@ every card in a specimen regardless of viewport intersection.
 `.site-header` and the token counter live outside individual screens. Their
 state therefore persists while pages change.
 
-On visitor-facing pages below the 768px desktop breakpoint, `html` and `body`
-are fixed to the viewport with document overflow disabled. A real
-`.content-wrapper` owns vertical scrolling instead. This mirrors the mobile
-Safari containment used by Bisous Production, preventing page content from
-being painted into Safari's transparent overscroll regions. Desktop keeps the
-normal document scroll model, and the menu temporarily locks the internal
-mobile scrollport while expanded.
+Visitor-facing pages use normal document scrolling and a `100vh` minimum page
+height at every breakpoint, matching the reference site's `min-h-screen`, so
+Safari can composite the page beneath its floating bottom toolbar. The viewport
+keeps Safari's default inset behavior rather than opting into
+`viewport-fit=cover`. The root canvas owns `--bg-page`, while `body` stays
+transparent and no `theme-color` overrides Safari's scroll-edge treatment.
+This mirrors the reference site's root/background structure.
+An opaque `.site-shell` wraps the sticky header and page content, matching the
+reference site's `.main bg-main-background` wrapper. On mobile, the site header
+occupies normal document flow, preventing content from starting inside Safari's
+top browser region. `.site-header::before` applies an 8px backdrop blur through
+a gradient mask. Once the page is more than 50px down, a downward scroll
+translates that whole header layer -128px; an upward scroll restores it.
+Important fixed bottom controls use
+`safe-area-inset-bottom`, but the document itself remains full-height and
+visible behind browser chrome.
 
 ## Tokens
 

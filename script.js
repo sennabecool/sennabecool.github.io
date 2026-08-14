@@ -3,7 +3,6 @@
 // =========================================================
 (() => {
   const body = document.body;
-  const scrollContainer = document.querySelector('[data-scroll-container]');
   const screens = Array.from(document.querySelectorAll('[data-screen-name]'));
   const screensByName = new Map(screens.map(s => [s.dataset.screenName, s]));
   const defaultScreenName = screens.find(screen => screen.hasAttribute('data-default-screen'))
@@ -143,7 +142,6 @@
 
     refreshTargets();
     schedule();
-    scrollContainer?.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
     new MutationObserver(() => {
@@ -155,6 +153,41 @@
       childList: true,
       subtree: true
     });
+  }
+
+  function setupMobileHeaderVisibility() {
+    const header = document.querySelector('[data-shell-header]');
+    if (!header) return;
+
+    const triggerY = 50;
+    const directionThreshold = 2;
+    let lastY = window.scrollY;
+    let frame = null;
+
+    const setHidden = hidden => {
+      header.toggleAttribute('data-scroll-hidden', hidden);
+    };
+
+    const render = () => {
+      frame = null;
+      const nextY = window.scrollY;
+      const delta = nextY - lastY;
+
+      if (nextY <= triggerY) setHidden(false);
+      else if (delta > directionThreshold) setHidden(true);
+      else if (delta < -directionThreshold) setHidden(false);
+
+      lastY = nextY;
+    };
+
+    // Keep the initial state honest: only a real downward scroll hides the
+    // header. Restored positions and fragment navigation must not masquerade
+    // as a user scroll during testing.
+    setHidden(false);
+    window.addEventListener('scroll', () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(render);
+    }, { passive: true });
   }
 
   function clearMenuTimers() {
@@ -354,11 +387,7 @@
     stampMessageTimes(activeScreen);
     if (animate) playScreenLeetTexts(name);
     if (scroll) {
-      const scrollTarget = window.matchMedia('(max-width: 767px)').matches
-        && scrollContainer
-        ? scrollContainer
-        : window;
-      scrollTarget.scrollTo({ top: 0, behavior: 'auto' });
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
     return true;
   }
@@ -2350,6 +2379,7 @@
   tokenCounter = createTokenCounter(document.querySelector('[data-token-counter]'));
   shellIntro = createShellIntro();
   setupViewportTopFade();
+  setupMobileHeaderVisibility();
 
   requestAnimationFrame(() => {
     leetTexts

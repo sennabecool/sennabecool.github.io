@@ -19,7 +19,8 @@ img { display: block; max-width: 100%; }
   --frame-max: 402px;
   --gutter: var(--space-6);
   --safe-bottom: max(env(safe-area-inset-bottom), var(--space-4));
-  --subpage-content-top: 80px;
+  --page-viewport-height: 100vh;
+  --subpage-content-top: 0px;
   --subpage-content-item-gap: var(--space-3);
   --subpage-scroll-bottom: calc(var(--space-3) + 128px + var(--space-10));
 }
@@ -27,12 +28,9 @@ img { display: block; max-width: 100%; }
 /* =========================================================
    Page
    ========================================================= */
-html { -webkit-text-size-adjust: 100%; }
-
-/* The wrapper becomes the viewport scrollport on mobile. `display: contents`
-   keeps the existing document-scrolling layout unchanged on larger screens. */
-.content-wrapper {
-  display: contents;
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--bg-page);
 }
 
 html:has(body[data-menu="open"]),
@@ -50,18 +48,50 @@ body {
   font-size: var(--fz-body);
   line-height: var(--lh-body);
   color: var(--fg-default);
-  background: var(--bg-page);
-  min-height: 100svh;
-  display: flex;
-  justify-content: center;
+  background: transparent;
+  min-height: var(--page-viewport-height);
+  display: block;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safari 26+ samples the direct background of qualifying fixed elements near
+   the viewport edge when tinting its browser chrome. Keep this separate from
+   the filtered navbar surface: pseudo-elements and backdrop-filter layers are
+   deliberately ignored by Safari's tint sampler. */
+.safari-top-tint {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  @supports (-webkit-touch-callout: none) {
+    .safari-top-tint {
+      display: block;
+      position: fixed;
+      top: 4px;
+      left: 0;
+      width: 100%;
+      min-height: 15px;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-page);
+      pointer-events: none;
+      z-index: 1000;
+    }
+  }
+}
+
+.site-shell {
+  width: 100%;
+  min-height: var(--page-viewport-height);
+  background: var(--bg-page);
 }
 
 .app {
   width: 100%;
   max-width: 100%;
-  min-height: 100svh;
+  margin-inline: auto;
+  min-height: var(--page-viewport-height);
   padding: var(--space-8) var(--gutter) calc(180px + var(--space-10) + var(--safe-bottom));
   position: relative;
 }
@@ -77,7 +107,7 @@ body {
 
 /* Hero pages fill the viewport; the global chatbox overlays their bottom area. */
 .screen[data-page-layout="hero"] {
-  min-height: 100svh;
+  min-height: var(--page-viewport-height);
 }
 /* Hero pages own their vertical spacing so they can start at y=0 and
    grow naturally when its content needs to scroll behind the fixed chatbox. */
@@ -88,7 +118,7 @@ body[data-page-layout="hero"] .app {
 .screen[data-page-layout="hero"] {
   justify-content: safe center;
   gap: 0;
-  padding: calc(80px + 112px) 0 180px;
+  padding: 112px 0 180px;
 }
 
 .screen:not([data-page-layout="hero"]) {
@@ -256,15 +286,16 @@ body:not([data-page-layout="hero"]) .app {
 }
 
 .site-header {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 50%;
+  left: auto;
   width: calc(100vw - (2 * var(--space-6)));
   height: 80px;
   z-index: 30;
   padding: 0;
-  margin: 0;
-  transform: translateX(-50%);
+  margin: 0 auto;
+  transform: none;
+  transition: transform 300ms ease-in-out;
 }
 
 .site-header::before {
@@ -276,37 +307,26 @@ body:not([data-page-layout="hero"]) .app {
   height: 80px;
   z-index: 0;
   pointer-events: none;
-  background: rgba(240, 240, 240, 0.01);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
+  background: transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   mask-image: linear-gradient(
     to bottom,
     #000 0%,
+    #000 35%,
     transparent 100%
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
     #000 0%,
+    #000 35%,
     transparent 100%
   );
   transform: translateX(-50%);
 }
 
 .site-header::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  height: 80px;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    var(--bg-page) 0%,
-    rgba(240, 240, 240, 0) 100%
-  );
-  transform: translateX(-50%);
+  content: none;
 }
 
 .site-header > * {
@@ -885,11 +905,12 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
 
 .chatbox-wrap {
   position: fixed;
-  left: 50%;
+  left: var(--space-3);
+  right: var(--space-3);
   bottom: var(--space-3);
-  transform: translateX(-50%);
-  width: calc(100% - var(--space-6));
-  max-width: 378px;
+  transform: none;
+  width: auto;
+  max-width: none;
   height: auto;
   z-index: 50;
   pointer-events: none;
@@ -898,6 +919,8 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
   box-shadow: none;
   transition:
     top       380ms cubic-bezier(0.34, 1.15, 0.64, 1),
+    left      380ms cubic-bezier(0.34, 1.15, 0.64, 1),
+    right     380ms cubic-bezier(0.34, 1.15, 0.64, 1),
     bottom    380ms cubic-bezier(0.34, 1.15, 0.64, 1),
     width     380ms cubic-bezier(0.34, 1.15, 0.64, 1),
     max-width 380ms cubic-bezier(0.34, 1.15, 0.64, 1),
@@ -1374,9 +1397,11 @@ body[data-menu="open"] .chatbox-overlay {
 }
 
 body[data-menu="open"] .chatbox-wrap {
+  left: var(--space-2);
+  right: var(--space-2);
   bottom: var(--space-2);
-  width: calc(100% - var(--space-4));
-  max-width: calc(var(--frame-max) - var(--space-4));
+  width: auto;
+  max-width: none;
   border-radius: 40px;
 }
 
@@ -1450,26 +1475,9 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
 /* =========================================================
    Responsive tweaks
    ========================================================= */
-/* Safari compatibility experiment based on Bisous Production: keep the
-   document canvas fixed and clip all page scrolling to an internal viewport. */
 @media (max-width: 767px) {
-  html,
-  body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .content-wrapper {
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: scroll;
-  }
-
-  body[data-menu="open"] .content-wrapper {
-    overflow: hidden;
+  .site-header[data-scroll-hidden] {
+    transform: translateY(-128px);
   }
 }
 
@@ -1534,7 +1542,7 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
     column-gap: 24px;
     align-content: start;
     position: relative;
-    min-height: 100svh;
+    min-height: var(--page-viewport-height);
     padding: calc(80px + 112px) 0 calc(80px + 128px + var(--space-10));
   }
 
@@ -1559,35 +1567,20 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
     height: 80px;
     z-index: 0;
     pointer-events: none;
-    background: rgba(240, 240, 240, 0.01);
-    backdrop-filter: blur(32px);
-    -webkit-backdrop-filter: blur(32px);
+    background: transparent;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    transparent 100%
-  );
-    -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    transparent 100%
-  );
-    transform: translateX(-50%);
-  }
-
-  .site-header::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 100vw;
-    height: 80px;
-    z-index: 1;
-    pointer-events: none;
-    background: linear-gradient(
       to bottom,
-      var(--bg-page) 0%,
-      rgba(240, 240, 240, 0) 100%
+      #000 0%,
+      #000 35%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 35%,
+      transparent 100%
     );
     transform: translateX(-50%);
   }
@@ -1666,12 +1659,17 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
   }
 
   .chatbox-wrap {
+    left: 50%;
+    right: auto;
     bottom: 80px;
+    transform: translateX(-50%);
     width: 652px;
     max-width: 652px;
   }
 
   body[data-menu="open"] .chatbox-wrap {
+    left: 50%;
+    right: auto;
     bottom: calc(80px - var(--space-1));
     width: min(calc(100% - var(--space-8)), calc(652px + var(--space-2)));
     max-width: calc(652px + var(--space-2));
