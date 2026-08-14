@@ -22,14 +22,18 @@ img { display: block; max-width: 100%; }
   --subpage-content-top: 80px;
   --subpage-content-item-gap: var(--space-3);
   --subpage-scroll-bottom: calc(var(--space-3) + 128px + var(--space-10));
-  --project-card-top-veil-height: 160px;
-  --project-card-top-veil-edge-opacity: 0.5;
 }
 
 /* =========================================================
    Page
    ========================================================= */
 html { -webkit-text-size-adjust: 100%; }
+
+/* The wrapper becomes the viewport scrollport on mobile. `display: contents`
+   keeps the existing document-scrolling layout unchanged on larger screens. */
+.content-wrapper {
+  display: contents;
+}
 
 html:has(body[data-menu="open"]),
 body[data-menu="open"] {
@@ -627,8 +631,6 @@ body:not([data-page-layout="hero"]) .app {
 
 .project-card {
   --project-card-border: #e9ebeb;
-  --project-card-viewport-mask-edge-stop: -1px;
-  --project-card-viewport-mask-opaque-stop: 0px;
   position: relative;
   background: var(--bg-surface);
   border: var(--stroke-thin) solid var(--project-card-border);
@@ -637,18 +639,6 @@ body:not([data-page-layout="hero"]) .app {
   overflow: hidden;
   isolation: isolate;
   display: block;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, var(--project-card-top-veil-edge-opacity))
-      var(--project-card-viewport-mask-edge-stop),
-    #000 var(--project-card-viewport-mask-opaque-stop)
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, var(--project-card-top-veil-edge-opacity))
-      var(--project-card-viewport-mask-edge-stop),
-    #000 var(--project-card-viewport-mask-opaque-stop)
-  );
   transition:
     transform 250ms var(--easing-default),
     box-shadow 250ms var(--easing-default);
@@ -859,8 +849,8 @@ html[data-project-image-reveal="enabled"] img[data-pixel-reveal][data-pixel-stat
 
 /* The view timeline handles entry from the bottom. The shared viewport
    controller supplies whole-element top opacity for text and compact
-   components. Project cards instead use the viewport-aligned mask above, so
-   their upper rows fade before the lower rows as cards cross the top veil. */
+   components. Project cards keep full opacity after entry and leave the
+   viewport naturally without a scripted top fade. */
 @supports (animation-timeline: view()) {
   .screen :is(.h1, .lede, .answer) .leet-word,
   .screen[data-page-layout="hero"] .page-logo--mobile,
@@ -1460,6 +1450,29 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
 /* =========================================================
    Responsive tweaks
    ========================================================= */
+/* Safari compatibility experiment based on Bisous Production: keep the
+   document canvas fixed and clip all page scrolling to an internal viewport. */
+@media (max-width: 767px) {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .content-wrapper {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+  }
+
+  body[data-menu="open"] .content-wrapper {
+    overflow: hidden;
+  }
+}
+
 @media (min-width: 768px) {
   :root {
     --frame-max: calc(1336px - (2 * 20px));
@@ -1675,11 +1688,6 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
   *, *::before, *::after {
     transition: none !important;
     animation: none !important;
-  }
-
-  .screen .project-card {
-    -webkit-mask-image: none;
-    mask-image: none;
   }
 
   body[data-menu="open"] .menu-btn__label {

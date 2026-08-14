@@ -200,13 +200,9 @@ page-sequence JavaScript configuration.
 Use `data-viewport-fade` on non-text page components that must disappear with
 the scroll timeline. Shared text, actions, and suggestions are already
 registered by their component selectors; their top fade reaches zero before
-the component crosses viewport `y=0`. Project cards retain the same bottom
-entry animation but use a separate mask fixed to the viewport's 0–160px top
-zone. The card retains 50% opacity exactly at the physical `y=0` edge and
-reaches full opacity at `y=160`, keeping the veil subtle. Each horizontal slice
-fades only while passing through that zone, so a tall card's lower content
-remains opaque until it reaches the veil. Reduced motion disables this
-scroll-linked card mask along with the entry animation.
+the component crosses viewport `y=0`. Project cards retain the shared bottom
+entry animation but intentionally have no scripted top fade or mask; after
+entry they remain fully opaque and leave through normal viewport clipping.
 
 ### Chat Bubble
 
@@ -298,6 +294,14 @@ every card in a specimen regardless of viewport intersection.
 
 `.site-header` and the token counter live outside individual screens. Their
 state therefore persists while pages change.
+
+On visitor-facing pages below the 768px desktop breakpoint, `html` and `body`
+are fixed to the viewport with document overflow disabled. A real
+`.content-wrapper` owns vertical scrolling instead. This mirrors the mobile
+Safari containment used by Bisous Production, preventing page content from
+being painted into Safari's transparent overscroll regions. Desktop keeps the
+normal document scroll model, and the menu temporarily locks the internal
+mobile scrollport while expanded.
 
 ## Tokens
 

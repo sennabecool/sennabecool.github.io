@@ -3,6 +3,7 @@
 // =========================================================
 (() => {
   const body = document.body;
+  const scrollContainer = document.querySelector('[data-scroll-container]');
   const screens = Array.from(document.querySelectorAll('[data-screen-name]'));
   const screensByName = new Map(screens.map(s => [s.dataset.screenName, s]));
   const defaultScreenName = screens.find(screen => screen.hasAttribute('data-default-screen'))
@@ -76,10 +77,6 @@
     startY: readCssNumber('--content-fade-out-start-y', 80),
     endY: readCssNumber('--content-fade-out-end-y', 0)
   });
-  const projectCardTopVeil = Object.freeze({
-    edgeY: 0,
-    opaqueY: readCssNumber('--project-card-top-veil-height', 160)
-  });
   const menuMotion = Object.freeze({
     duration: readCssNumber('--duration-spring', 380),
     easing: readCssValue('--easing-flip', 'cubic-bezier(0.32, 0.72, 0, 1)')
@@ -119,12 +116,10 @@
       '.screen .suggestion'
     ].join(', ');
     let targets = [];
-    let projectCards = [];
     let frame = null;
 
     const refreshTargets = () => {
       targets = [...document.querySelectorAll(selector)];
-      projectCards = [...document.querySelectorAll('.screen .project-card')];
     };
 
     const render = () => {
@@ -139,18 +134,6 @@
         );
         element.style.setProperty('--content-viewport-top-opacity', opacity.toFixed(4));
       });
-      projectCards.forEach(card => {
-        if (!card.getClientRects().length) return;
-        const top = card.getBoundingClientRect().top;
-        card.style.setProperty(
-          '--project-card-viewport-mask-edge-stop',
-          `${(projectCardTopVeil.edgeY - top).toFixed(2)}px`
-        );
-        card.style.setProperty(
-          '--project-card-viewport-mask-opaque-stop',
-          `${(projectCardTopVeil.opaqueY - top).toFixed(2)}px`
-        );
-      });
     };
 
     const schedule = () => {
@@ -160,6 +143,7 @@
 
     refreshTargets();
     schedule();
+    scrollContainer?.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
     new MutationObserver(() => {
@@ -370,7 +354,11 @@
     stampMessageTimes(activeScreen);
     if (animate) playScreenLeetTexts(name);
     if (scroll) {
-      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+      const scrollTarget = window.matchMedia('(max-width: 767px)').matches
+        && scrollContainer
+        ? scrollContainer
+        : window;
+      scrollTarget.scrollTo({ top: 0, behavior: 'auto' });
     }
     return true;
   }
