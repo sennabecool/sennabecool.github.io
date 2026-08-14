@@ -38,6 +38,7 @@
   let menuLeetTexts = [];
   let contentLeetTexts = [];
   let topbarLeetTexts = [];
+  let cardLeetTexts = [];
   let tokenCounter = null;
   let shellIntro = null;
   let viewportRevealObserver = null;
@@ -1594,6 +1595,7 @@
   const leetTexts = [...document.querySelectorAll('[data-leet-text]')].map(createLeetText);
   const leetEffectsByRole = {
     ambient: [],
+    card: [],
     content: [],
     menu: [],
     topbar: []
@@ -1609,7 +1611,8 @@
   menuLeetTexts = leetEffectsByRole.menu;
   topbarLeetTexts = leetEffectsByRole.topbar;
   contentLeetTexts = leetEffectsByRole.content;
-  [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts]
+  cardLeetTexts = leetEffectsByRole.card;
+  [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts, ...cardLeetTexts]
     .forEach(effect => effect.setInteractionTokenConsumer(consumeToken));
   [...menuLeetTexts, ...topbarLeetTexts, ...contentLeetTexts]
     .forEach(effect => effect.prepareHidden());
@@ -2144,7 +2147,11 @@
     };
 
     if (group.matches('.project-card')) {
-      effects.forEach(effect => effect.showPlain());
+      // Card titles are deliberately outside the page sequence: each title
+      // plays only when its own card enters, so it cannot hold up other cards.
+      cardLeetTexts
+        .filter(effect => effect.el.closest('.project-card') === group)
+        .forEach(effect => effect.playIn({ correctionAfterWrite: true }));
       window.setTimeout(() => {
         if (!isPageSequenceActive(screenName, sequenceVersion)) return;
         group.dataset.revealState = 'revealed';
@@ -2473,7 +2480,7 @@
 
   requestAnimationFrame(() => {
     leetTexts
-      .filter(effect => !menuLeetTexts.includes(effect) && !contentLeetTexts.includes(effect) && !topbarLeetTexts.includes(effect))
+      .filter(effect => !menuLeetTexts.includes(effect) && !contentLeetTexts.includes(effect) && !topbarLeetTexts.includes(effect) && !cardLeetTexts.includes(effect))
       .forEach(effect => effect.playIn());
 
     const initialScreenName = getScreenNameFromLocation();
