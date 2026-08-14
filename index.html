@@ -7,7 +7,7 @@
   <meta name="description" content="Portfolio of Leo Cabannes, Lead Designer (UX/UI) at Artefact in Paris, designing GenAI use cases for Business Intelligence." />
   <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
   <link rel="stylesheet" href="tokens.css?v=141" />
-  <link rel="stylesheet" href="styles.css?v=238" />
+  <link rel="stylesheet" href="styles.css?v=239" />
 </head>
 <body
   data-screen="home"
@@ -17,7 +17,6 @@
   data-shell-intro="playing"
   data-routing="hash"
 >
-  <div class="safari-top-tint" aria-hidden="true"></div>
   <div class="site-shell">
 
   <!-- SVG icon defs reused across the site -->
@@ -44,27 +43,29 @@
     </defs>
   </svg>
 
-  <header class="top-bar site-header" data-shell-header>
-    <a class="logo logo-lg logo-lg--topbar" href="#home" data-target="home" aria-label="Leo Cabannes home">
-      <img src="assets/logo.svg" alt="" />
-    </a>
-    <div class="site-identity" aria-label="Portfolio identity">
-      <span class="site-identity__name" data-leet-role="topbar" data-leet-text>Leo Kaj Cabannes</span>
-      <button class="site-identity__version" type="button" aria-haspopup="listbox" aria-expanded="false" data-leet-role="topbar" data-leet-text>
-        Pico 11.4
-      </button>
-    </div>
-
-    <div class="token-counter" aria-label="Tokens left">
-      <div class="token-counter__control">
-        <div class="token-counter__stack">
-          <span class="token-counter__label" data-leet-role="topbar" data-leet-text>Tokens left</span>
-          <span class="token-counter__value" data-token-counter data-token-target="200000000">0</span>
-        </div>
-        <span class="token-counter__marker" aria-hidden="true"></span>
+  <div class="safari-top-tint">
+    <header class="top-bar site-header" data-shell-header>
+      <a class="logo logo-lg logo-lg--topbar" href="#home" data-target="home" aria-label="Leo Cabannes home">
+        <img src="assets/logo.svg" alt="" />
+      </a>
+      <div class="site-identity" aria-label="Portfolio identity">
+        <span class="site-identity__name" data-leet-role="topbar" data-leet-text>Leo Kaj Cabannes</span>
+        <button class="site-identity__version" type="button" aria-haspopup="listbox" aria-expanded="false" data-leet-role="topbar" data-leet-text>
+          Pico 11.4
+        </button>
       </div>
-    </div>
-  </header>
+
+      <div class="token-counter" aria-label="Tokens left">
+        <div class="token-counter__control">
+          <div class="token-counter__stack">
+            <span class="token-counter__label" data-leet-role="topbar" data-leet-text>Tokens left</span>
+            <span class="token-counter__value" data-token-counter data-token-target="200000000">0</span>
+          </div>
+          <span class="token-counter__marker" aria-hidden="true"></span>
+        </div>
+      </div>
+    </header>
+  </div>
 
   <main id="main-content" class="app">
     <!-- =================== HOME =================== -->
@@ -286,6 +287,6 @@
 
   </div>
 
-  <script src="script.js?v=195"></script>
+  <script src="script.js?v=196"></script>
 </body>
 </html>

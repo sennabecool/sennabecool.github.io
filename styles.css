@@ -20,9 +20,13 @@ img { display: block; max-width: 100%; }
   --gutter: var(--space-6);
   --safe-bottom: max(env(safe-area-inset-bottom), var(--space-4));
   --page-viewport-height: 100vh;
-  --subpage-content-top: 0px;
+  --subpage-content-top: 80px;
   --subpage-content-item-gap: var(--space-3);
   --subpage-scroll-bottom: calc(var(--space-3) + 128px + var(--space-10));
+  --project-card-reveal-duration: 480ms;
+  --project-card-reveal-stagger: 120ms;
+  --project-card-reveal-offset: 12px;
+  --viewport-reveal-threshold: 0.05;
 }
 
 /* =========================================================
@@ -56,11 +60,10 @@ body {
 }
 
 /* Safari 26+ samples the direct background of qualifying fixed elements near
-   the viewport edge when tinting its browser chrome. Keep this separate from
-   the filtered navbar surface: pseudo-elements and backdrop-filter layers are
-   deliberately ignored by Safari's tint sampler. */
+   the viewport edge when tinting its browser chrome. This wrapper contains the
+   top bar while keeping its gradient separate from the filtered navbar layer. */
 .safari-top-tint {
-  display: none;
+  display: contents;
 }
 
 @media (max-width: 767px) {
@@ -68,15 +71,34 @@ body {
     .safari-top-tint {
       display: block;
       position: fixed;
-      top: 4px;
+      top: 0;
       left: 0;
       width: 100%;
-      min-height: 15px;
+      height: 80px;
       margin: 0;
       padding: 0;
-      background-color: var(--bg-page);
+      background: linear-gradient(
+        to bottom,
+        #f0f0f0 0,
+        #f0f0f0 8px,
+        rgba(240, 240, 240, 0.96) 17px,
+        rgba(240, 240, 240, 0.84) 26px,
+        rgba(240, 240, 240, 0.68) 35px,
+        rgba(240, 240, 240, 0.5) 44px,
+        rgba(240, 240, 240, 0.32) 53px,
+        rgba(240, 240, 240, 0.16) 62px,
+        rgba(240, 240, 240, 0.04) 71px,
+        rgba(240, 240, 240, 0) 80px
+      );
       pointer-events: none;
       z-index: 1000;
+    }
+
+    .safari-top-tint > .site-header {
+      position: relative;
+      top: auto;
+      left: auto;
+      pointer-events: auto;
     }
   }
 }
@@ -131,7 +153,7 @@ body[data-screen="work"] .screen[data-page-layout="conversation"] {
 }
 
 body[data-screen="work"] .message__body > .project-grid {
-  margin-top: calc((var(--space-6) * 2) - var(--subpage-content-item-gap));
+  margin-top: 0;
 }
 
 body:not([data-page-layout="hero"]) .app {
@@ -152,7 +174,7 @@ body:not([data-page-layout="hero"]) .app {
 }
 
 .subpage-content > .logo-sm + .message {
-  margin-top: var(--subpage-content-item-gap);
+  margin-top: var(--space-6);
 }
 
 [data-assistant-avatar] {
@@ -169,7 +191,7 @@ body:not([data-page-layout="hero"]) .app {
   transform: scale(1);
 }
 
-.subpage-content :is(.message, .message__body, .answer, .project-grid) {
+.subpage-content .project-grid {
   gap: var(--subpage-content-item-gap);
 }
 /* =========================================================
@@ -367,7 +389,7 @@ body:not([data-page-layout="hero"]) .app {
 .message__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
 }
 
 .message__body > .lede {
@@ -377,7 +399,7 @@ body:not([data-page-layout="hero"]) .app {
 .message__continuation {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
 }
 
 .message__continuation > .lede {
@@ -551,7 +573,7 @@ body:not([data-page-layout="hero"]) .app {
 .answer {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-6);
   font-size: var(--fz-paragraph);
   line-height: var(--lh-body);
   letter-spacing: 0;
@@ -559,7 +581,7 @@ body:not([data-page-layout="hero"]) .app {
 }
 .answer p { margin: 0; }
 .answer strong { color: var(--fg-default); font-weight: var(--fw-semibold); }
-.answer .suggestions { margin-top: var(--space-3); }
+.answer .suggestions { margin-top: var(--space-6); }
 
 /* =========================================================
    Suggestion row (link-like, with corner-down-right icon)
@@ -660,8 +682,22 @@ body:not([data-page-layout="hero"]) .app {
   isolation: isolate;
   display: block;
   transition:
+    opacity var(--project-card-reveal-duration) var(--easing-default),
+    translate var(--project-card-reveal-duration) var(--easing-default),
     transform 250ms var(--easing-default),
     box-shadow 250ms var(--easing-default);
+}
+
+.project-card[data-reveal-state="pending"],
+.project-card[data-reveal-state="queued"] {
+  opacity: 0;
+  translate: 0 var(--project-card-reveal-offset);
+}
+
+.project-card[data-reveal-state="revealing"],
+.project-card[data-reveal-state="revealed"] {
+  opacity: 1;
+  translate: 0 0;
 }
 .project-card:hover {
   transform: translateY(calc(-1 * 2px));
@@ -1533,7 +1569,7 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
 
   .app {
     max-width: 1336px;
-    padding: 0 20px;
+    padding: 80px 20px;
   }
 
   .screen[data-page-layout="hero"] {
@@ -1694,5 +1730,5 @@ body[data-menu="open"] .menu-btn__icon { transform: rotate(0.625turn); }
 }
 
 .subpage-content > .logo-sm + .message {
-  margin-top: var(--subpage-content-item-gap);
+  margin-top: var(--space-6);
 }
